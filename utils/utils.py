@@ -26,6 +26,7 @@ def partition_week(th=0.05):
   return pt
 
 def create_AedesAI_input_dataframe(indata,th=0.05):
+  indata.Datetime = pd.to_datetime(indata.Datetime)
   # Find range of weeks in input dataframe
   wk=list(set(indata.Week)); wmin=np.min(wk); wmax=np.max(wk)
   # For each week, create temperature and RH data based on mean and standard
@@ -42,7 +43,7 @@ def create_AedesAI_input_dataframe(indata,th=0.05):
     mu=indata.RHWeek_pct[idx]; sg=indata.RHWeekSD[idx]
     RH=np.append(RH,rng.normal(mu, sg, 7))
     # Precipitation
-    PT=np.append(PT,indata.RainWeek_mm[idx]/10*partition_week(th))
+    PT=np.append(PT,indata.RainWeek_cm[idx]/10*partition_week(th))
     # Female mosquitoes
     mu=indata.Ae_aeg_Female_7Days_mean[idx]; sg=indata.Ae_aeg_Female_7Days_sd[idx]
     #FM=np.append(FM,rng.normal(mu, sg, 7))
@@ -60,7 +61,7 @@ def create_AedesAI_input_dataframe(indata,th=0.05):
   )
   # Assign dates to all entries, the first one of which is 3 days (Monday)
   # before the Wednesday of the first week
-  dtes=indata.Date_median-pd.DateOffset(days=3)
+  dtes=indata.Datetime-pd.DateOffset(days=3)
   Ddata['Date']=pd.Series(pd.date_range(dtes[0], periods=len(T)))
   Ddata['Year'], Ddata['Month'] = Ddata['Date'].dt.year, Ddata['Date'].dt.month
   Ddata['Day'] = Ddata['Date'].dt.day
@@ -68,7 +69,7 @@ def create_AedesAI_input_dataframe(indata,th=0.05):
   Ddata['Location'] = indata.Site[0]
   # Reorder the columns
   Ddata=Ddata[['Location', 'Year', 'Month', 'Day', 'Avg_Temp', 'Precip','Humidity', 'Ref']]
-  return Ddata
+  return Ddata, Ddata.columns
 
 def add_missing_values(indata):
   # Find week range
@@ -81,13 +82,14 @@ def add_missing_values(indata):
   missing_weeks=tt.loc[lambda tt: pd.isna(tt.Site), :].index
   # Bracket range of missing weeks
   tmp=missing_weeks[0]+np.arange(len(missing_weeks)+2)-1
-  ist=tmp[0]; iend=tmp[-1];
+  ist=tmp[0]
+  iend=tmp[-1]
   # Update week number
   tt.loc[missing_weeks,'Week']=tt.loc[missing_weeks,'All_Week']
   # Update site name
   tt.loc[missing_weeks,'Site']=tt.loc[ist,'Site']
   # Update numerical values
-  for id in tt.columns[4:]:     # Starts at 4 because added 'All_Week' column
+  for id in tt.columns[9:]:     # Starts at 4 because added 'All_Week' column
     tmp=tt.loc[ist,id]+np.arange(len(missing_weeks)+2)/(len(missing_weeks)+1)*(tt.loc[iend,id]-tt.loc[ist,id])
     tt.loc[missing_weeks,id]=tmp[1:-1]
   # Return dataframe with original columns
