@@ -14,31 +14,31 @@ Python code that reads and formats the PR weather input data so that it can be u
 * An overview of the file structure is provided in PR_Mosquito_Abundance.pdf.
 * Because the ANN had to be retrained, this file was run again on 11/12/2022.
 
-## ```PREPROCESS_AND_SMOOTH.ipynb```
+## ```preprocess_and_smooth.ipynb```
 Python code that converts daily predictions to weekly means and smoothes trap data using a 3wk moving average. Results paths are stored in variables ```raw_data``` and ```smoothed_data``` from ```fpaths_config.json```.
 
-## ```CALCULATE_METRICS.ipynb```
+## ```calculate_metrics.ipynb```
 Python code that scales and forecasts for each day with data availabe, then calculates the overall metrics, interval metrics, and scaling ratios. It does this for the ANN predictions generated using local weather and the airport weather. Results paths are stored in ```mean_metric_fil```, ```amt_metrics```, ```scaling_rto_fil```, and ```baseline_scaling_rto_fil``` from ```fpaths_config.json```.
 
-## ```CALCULATE_COVERAGES.ipynb```
+## ```calculate_coverages.ipynb```
 Python code that scales and forecasts for each day with data available, then calculates the confidence intervals for $1-\alpha=0, 0.1, ..., 0.99$. Finally, reports whether the trap data point for each week in the forecast was captured by the corresponding confidence intervals. Results paths is stored in ```coverages_path``` from ```fpaths_config.json```.
 
-## ```MEAN_METRIC_FIGURES.ipynb```
+## ```mean_metric_figures.ipynb```
 Python code to produce figures associated with the mean metrics:
 * justify scaling window byu showing RMSE for varying scaler windows
 * show the average RMSE for baselines, forecasts with local weather, and forecasts with airport weather
 The results path is stored in variable ```metric_figures_path``` from ```fpaths_config.json```.
 
-## ```INTERVAL_METRIC_FIGURES.ipynb```
+## ```interval_metric_figures.ipynb```
 Python code to produce a figure comparing the RMSE scores for the whole-year forecast to the interval RMSEs. Results path is stored in variable ```metric_figures_path``` from ```fpaths_config.json```.
 
-## ```COVERAGE_FIGURES.ipynb```
+## ```coverage_figures.ipynb```
 Python code to produce a figure showing the coverages of all confidence intervals for all locations with local and airport weather. Results path is stored in variable ```metric_figures_path``` from ```fpaths_config.json```.
 
-## ```REPRESENTATIVE_FORECASTS.ipynb```
+## ```representative_forecasts.ipynb```
 Python code to produce the representative forecasts for all locations, showing high and low skill forecasts generated with local weather and airport weather. Results path is stored in variable ```misc_figures_path``` from ```fpaths_config.json```.
 
-## ```MISC_FIGURES.ipynb```
+## ```misc_figures.ipynb```
 Python code to produce miscellaneous figures:
 * scatter plot of abundance curves generated using local weather and weather from the San Juan airport
 * comparison of local weather and San Juan airport weather
