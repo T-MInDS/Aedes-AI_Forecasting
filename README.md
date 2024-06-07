@@ -1,6 +1,6 @@
 # Directory for mosquito abundance forecasting with *Aedes-AI* neural networks
 
-This directory contains the methodology used to generate and analyze forecasts. Jupyter notebooks in the ```../notebooks/``` control the workflow, and we provide descriptions of these notebooks here. The ```fpaths_config.json``` file is referenced throughout the notebooks and controls the file storage of all results.
+This directory contains the methodology used to generate and analyze forecasts. Jupyter notebooks in the ```../notebooks/``` control the workflow, and we provide descriptions of these notebooks here, listed in the order they should be run. The ```fpaths_config.json``` file is referenced throughout the notebooks and controls the file storage of all results.
 ## ```Aedes_AI-GRU_Average_Temperature.ipynb```
 Python code to train the ANN model using average temperature, precipitation, and relative humidity as inputs.
 * An overview of the file structure, together with plots for various locations in the testing set, are provided in Aedes_AI-GRU_Average_Temperature.pdf.
