@@ -7,7 +7,7 @@ Python code to train the ANN model using average temperature, precipitation, and
 * The model was retrained on 11/12/2022 because of updates in sklearn. See https://scikit-learn.org/stable/modules/model_persistence.html#security-maintainability-limitations for more information.
 
 
-## ```PR_Mosquito_Abundance.ipynb```
+## ```mosquito_abundance.ipynb```
 Python code that reads and formats the PR weather input data so that it can be used to create input files for the ANN model.
 * Examples of input files are created for 4 locations in Puerto Rico.
 * The resulting ANN output is compared to surveillance trap data.
