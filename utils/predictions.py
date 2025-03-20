@@ -10,7 +10,7 @@ from sklearn.preprocessing import MinMaxScaler
 import joblib
 from sklearn.metrics import r2_score
 from itertools import chain
-sys.path.append("./models")
+#sys.path.append("./models")
 import pdb
 from glob import glob
 from scipy.signal import savgol_filter
@@ -69,8 +69,8 @@ Returns:
       returns (scaled input data, spatiotemporal information, scaler fit to data) 
 """
 def format_data(data, data_shape, scaler = None, fit_scaler = False):
-    if 'Ref' not in data.columns:
-        data['Ref']=np.zeros(len(data))
+    if 'MoLS' not in data.columns:
+        data['MoLS']=np.zeros(len(data))
         ref=False
     else:
         ref=True
@@ -125,11 +125,12 @@ def gen_preds(model, data, data_shape, scaler=None, fit_scaler=False, smooth=Tru
         X, locs, ref = format_data(data, data_shape, scaler, fit_scaler)
 
     model_preds=np.asarray(model.predict(X[:,:,0:-1]))
+
     # Scale to original value range and concatenate results
     data_ref=np.zeros((len(model_preds),X.shape[-1]))
     data_ref[:,-1]=X[:,-1,-1]
     data_ref=scaler.inverse_transform(data_ref)
-
+    
     data_nn=np.zeros((len(model_preds),X.shape[-1]))
     data_nn[:,-1]=model_preds[:,0]
     data_nn=scaler.inverse_transform(data_nn)
