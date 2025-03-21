@@ -44,7 +44,7 @@ def create_AedesAI_input_dataframe(indata,th=0.05):
     mu=indata.RHWeek_pct[idx]; sg=indata.RHWeekSD[idx]
     RH=np.append(RH,rng.normal(mu, sg, 7))
     # Precipitation
-    PT=np.append(PT,indata.RainWeek_cm[idx]/10*partition_week(th))
+    PT=np.append(PT,indata.RainWeek_mm[idx]/10*partition_week(th))
   # Create dataframe with daily data
   Ddata=pd.DataFrame(
       {

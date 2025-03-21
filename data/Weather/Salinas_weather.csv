@@ -1,4 +1,4 @@
-﻿Site,Week,Date_median,Datetime,RainWeek_cm,TempWeek_C,RHWeek_pct,TempWeekSD,RHWeekSD
+﻿Site,Week,Date_median,Datetime,RainWeek_mm,TempWeek_C,RHWeek_pct,TempWeekSD,RHWeekSD
 Arboleda,72,6-Mar-13,3/6/2013,4.86,25.16,74.8,0.49,2.18
 Arboleda,73,13-Mar-13,3/13/2013,0,24.74,74.5,0.53,3.68
 Arboleda,74,20-Mar-13,3/20/2013,0,25.81,74.42,0.39,2.48
