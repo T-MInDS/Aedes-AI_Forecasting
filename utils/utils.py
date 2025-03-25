@@ -1,13 +1,67 @@
 import numpy as np
 import pandas as pd
-import os
+import os, glob
+
+def merge_for_training(fil_path, dist):
+  samples = pd.read_csv('{}/Arboleda_{}.csv'.format(fil_path, dist))
+  samples['Location'] = 'Arboleda'
+
+  to_merge = pd.read_csv('{}/Villodas_{}.csv'.format(fil_path, dist))
+  to_merge['Location'] = 'Villodas'
+  samples = pd.concat([samples, to_merge], axis=0)
+
+  to_merge = pd.read_csv('{}/La_Margarita_{}.csv'.format(fil_path, dist))
+  to_merge['Location'] = 'La_Margarita'
+  samples = pd.concat([samples, to_merge], axis=0)
+
+  to_merge = pd.read_csv('{}/San_Juan_{}.csv'.format(fil_path, dist))
+  to_merge['Location'] = 'San_Juan'
+  samples = pd.concat([samples, to_merge], axis=0)
+  
+  samples.Datetime = pd.to_datetime(samples.Datetime)
+  samples['Year'] = samples.Datetime.dt.year
+  samples['Month'] = samples.Datetime.dt.month
+  samples['Day'] = samples.Datetime.dt.day
+
+    
+  weather = pd.read_pickle('../data/Weather/Arboleda_daily.pd')
+  to_merge = pd.read_pickle('../data/Weather/La_Margarita_daily.pd')
+  weather = pd.concat([weather, to_merge], axis=0)
+
+  to_merge = pd.read_pickle('../data/Weather/Villodas_daily.pd')
+  weather = pd.concat([weather, to_merge], axis=0)
+
+  to_merge = pd.read_pickle('../data/Weather/San_Juan_daily.pd')
+  weather = pd.concat([weather, to_merge], axis=0)
+
+  merged = weather.merge(samples, on=['Location', 'Year', 'Month', 'Day'], how='left')
+  merged.drop(columns=['Ref', 'Neural Network'], inplace=True)
+  merged = merged[['Location', 'Year', 'Month', 'Day', 'Avg_Temp', 'Precip', 'Humidity', 'weekly_mean', 'weekly_var']]
+  
+  merged.to_csv('../utils/model_files/finetune_training_traps.csv', index=False)
+  return merged
+
+def format_synthetic_for_training(data, scaler):
+  X_train = [], y_train = [], X_val = [], y_val = [], X_test = [], y_test = []
+  for i in range(0,len(data)):
+    sample = data.iloc[i:i+90]
+    if not pd.isna(sample.iloc[-1]['weekly_mean']):
+      scaled = scaler.transform(sample)
+      if sample.Year<2015:
+        
+        X_train.append(scaler.transform(sample[['Avg_Temp', 'Precip', 'Humidity']].values))
+
+  print(data)
+  asdf
+
+
 
 def load_csv(file):
-    if os.path.exists(file):
-        data = pd.read_csv(file)
-    else:
-      print('File does not exist')
-    return data
+  if os.path.exists(file):
+    data = pd.read_csv(file)
+  else:
+    print('File does not exist')
+  return data
 
 
 def partition_week(th=0.05):
