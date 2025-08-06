@@ -5,7 +5,7 @@ import pandas as pd, numpy as np
 from sklearn.preprocessing import MinMaxScaler
 import sys
 sys.path.append('../')
-import utils.models
+import utils.models as models
 
 #os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
@@ -24,6 +24,30 @@ if gpus:
 
 np.random.seed(14)
 
+def format_synthetic_for_training(data, fit_scaler = False, scaler = None):
+    cols = ['Avg_Temp', 'Precip', 'Humidity', 'weekly_mean', 'weekly_var']
+    if fit_scaler: 
+        to_scale = data[data.Year<2015]
+        scaler.fit(to_scale[cols].values)
+        
+    X_train = []; y_train = []; X_val = []; y_val = []; X_test = []; y_test = []; test_locs = []
+    for i in range(0,len(data)):
+        sample = data.iloc[i:i+90]
+        if not pd.isna(sample.iloc[-1]['weekly_mean']):
+            scaled = scaler.transform(sample[cols].values)        
+            yr = sample.Year.iloc[-1]
+            if yr<2015:
+                X_train.append(scaled[:,0:3])
+                y_train.append(scaled[-1,3:])
+            elif yr==2015:
+                X_val.append(scaled[:,0:3])
+                y_val.append(scaled[-1,3:])
+            else:
+                X_test.append(scaled[:,0:3])
+                y_test.append(scaled[-1,3:])
+                test_locs.append(sample.iloc[-1,0:4].values)
+    return X_train, y_train, X_val, y_val, X_test, y_test, test_locs
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('config', type=str, help='The json configuration file for the aedes model.')
@@ -40,25 +64,7 @@ def format_data(data, data_shape, samples_per_city, scaler=None, fit_scaler=Fals
     data = []
     for city, subset in groups:
         random_indices = np.random.randint(0, len(subset) - (data_shape[0] + 1), size = samples_per_city)
-
-        if (summer_samples and city in summer_cities) or (winter_samples and city in winter_cities):
-            peaks = peak_finder(subset.values[:, -1] / subset.values[:, -1].max(), 0.2, 7, 7)
-            season_intervals = []
-            start = 0
-            for i, peak in enumerate(peaks):
-                if peak[0] > (365 * (1 + len(season_intervals))):
-                    # peak[0] is next season
-                    season_intervals.append((max(peaks[start][0], data_shape[0]), peaks[i-1][1]))
-                    start = i
-            # add final season
-            season_intervals.append((peaks[start][0], peaks[-1][1]))
-            summer_indices = np.concatenate([range(*szn) for szn in season_intervals]).astype(int) - data_shape[0]
-            if summer_samples and city in summer_cities:
-                random_indices = np.concatenate([random_indices, np.random.choice(summer_indices, size = summer_samples)])
-            if winter_samples and city in winter_cities:
-                all_indices = set(np.arange(len(subset) - data_shape[0], dtype=int))
-                winter_indices = np.array(list(all_indices.difference(summer_indices)), dtype=int)
-                random_indices = np.concatenate([random_indices, np.random.choice(winter_indices, size = winter_samples)])
+        random_indices = np.unique(random_indices)
 
         for i in range(len(random_indices)):
             random_index = random_indices[i]
@@ -130,9 +136,6 @@ def main():
                   callbacks = [tf.keras.callbacks.TensorBoard(), tf.keras.callbacks.EarlyStopping(patience = 15, restore_best_weights = True)])
         model.save(model_file, save_format = 'h5')
         
-
-        visuals.plot_loss(history, args.config.split('.')[0].split('/')[-1])
-        visuals.plot_r2(history, args.config.split('.')[0].split('/')[-1])
 
 
 if __name__ == '__main__':

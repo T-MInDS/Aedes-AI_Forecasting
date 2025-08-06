@@ -6,12 +6,18 @@ import matplotlib.dates as mdates
 from datetime import date
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-import utils.utils as utils
+import utils.simulations as sims
 
 from scipy.fft import fft, fftfreq
 
 from sklearn.metrics import mean_squared_error as mse
 from scipy.stats import nbinom as nbinom 
+from scipy.stats import poisson
+
+def sim_cols(n):
+    run_cols = []
+    [run_cols.append('mols_run_{}'.format(i)) for i in range(0,n)]
+    return run_cols
 
 def scale_rto(data):
     return data.describe().loc['mean']['Ref'] / data.describe().loc['mean']['Neural Network']
@@ -36,41 +42,112 @@ def calculate_quant(nn_preds, mean_p, ci):
     
     return ns, l_forecast_quant, u_forecast_quant
 
-def moving_avg(a, n=7):
-    ret = pd.DataFrame(a).rolling(n, min_periods=1).mean()
+def moving_avg(a, n=7, double=True):
+    ret = pd.DataFrame(a).rolling(n, center=True).mean()
+    if double:
+        ret = ret.rolling(n, center=True).mean()
     return ret
 
-def coverage_analysis(site_info, site_nn_data, scaler_forecasts, ofil):
-    site, weather_flag, smoothing_flag = site_info
+def calculate_poisson_quant(nn_preds, ci):
+    u_forecast_quant = poisson.ppf(0.5+ci/2, mu=nn_preds)
+    l_forecast_quant = poisson.ppf(0.5-ci/2, mu=nn_preds)
+    return l_forecast_quant, u_forecast_quant
+
+def coverage_analysis(site_info, site_nn_data, scaler_forecasts, ofil, wiggle_flag):
+    
+    site, weather_flag, dist = site_info
+    run_cols = sim_cols(50)
+
     for scaler_forecast in scaler_forecasts:
         scaler_win, forecast_win = scaler_forecast
               
         for i in range(0, len(site_nn_data) - (scaler_win+forecast_win)):
             cis = np.arange(0,1.1,step=0.1)
-            cis[-1] = 0.99
             
             site_nn_subset = site_nn_data.copy(deep=True)
             site_nn_subset = site_nn_subset.iloc[i:i+scaler_win+forecast_win,:]
-        
+
             for ci in cis:
                 results = "{}\t{}\t{}\t".format(site, site_nn_subset.Datetime.iloc[-forecast_win], ci)
         
-                l_quant, u_quant, ns, mean_p, scaled_nn_preds = main_analysis(scaler_win, forecast_win, ci, site_nn_subset)
+                if wiggle_flag==True:
+                    avg_trap = np.average(site_nn_subset.Ref.iloc[:scaler_win])
+                    ci += 1/avg_trap
+                    ci = min(ci, 0.99)
+
+
+                if dist=='negbin':
+                    l_quant, u_quant, ns, mean_p, scaled_nn_preds = main_analysis(scaler_win, forecast_win, ci, site_nn_subset)
+                elif dist=='poisson':
+                    scaler = scale_rto(site_nn_subset.iloc[:scaler_win,:])   
+                    scaled_nn_preds = scaler*site_nn_subset['Neural Network']
+
+                    l_quant, u_quant = calculate_poisson_quant(scaled_nn_preds[-forecast_win:], ci)
+                
                 forecast_days = site_nn_subset.iloc[-forecast_win:,:].copy(deep=True)
                 
                 forecast_days['Lower_quant'] = l_quant
                 forecast_days['Upper_quant'] = u_quant
                 
                 for k in range(0,len(forecast_days)):
-                    if (forecast_days.Lower_quant.iloc[k]<=forecast_days.Ref.iloc[k]<=forecast_days.Upper_quant.iloc[k]):
-                        results += '1\t'
-                    else:
-                        results += '0\t'
-                results += '\n'
-                with open(ofil, 'a') as f:
-                    f.write(results)
-                    f.close()
+                    rto = ((forecast_days[run_cols].iloc[k] >= forecast_days.Lower_quant.iloc[k]) & (forecast_days[run_cols].iloc[k] <= forecast_days.Upper_quant.iloc[k])).sum()/len(forecast_days[run_cols])
+                    results += '{}\t'.format(rto)
+                    if ((dist=='poisson') & (k==24) & (round(ci, ndigits=1)==0.0)):
+                        plt.figure(i)
+                        plt.fill_between(forecast_days.Datetime, forecast_days.Lower_quant, forecast_days.Upper_quant, alpha=0.5, color='tab:blue')
+                        [plt.scatter(forecast_days.Datetime, forecast_days[mols_col], s=2, color='tab:orange', alpha=0.5) for mols_col in sim_cols(50)]
+                        plt.title(f'0.5PI, coverage: {rto:.3f}')
+                        plt.savefig(f'../output/poisson_tests/{i}.png')
+                        plt.close()
+                if True:
+                    results += '\n'
+                    with open(ofil, 'a') as f:
+                        f.write(results)
+                        f.close()
     return 
+
+def confirm_point_predictions(site_info, site_nn_data, scaler_forecasts, ofil):
+    
+    site, weather_flag, dist = site_info
+    run_cols = sim_cols(50)
+
+    for scaler_forecast in scaler_forecasts:
+        scaler_win, forecast_win = scaler_forecast
+              
+        for i in range(0, len(site_nn_data) - (scaler_win+forecast_win)):
+            
+            site_nn_subset = site_nn_data.copy(deep=True)
+            site_nn_subset = site_nn_subset.iloc[i:i+scaler_win+forecast_win,:]
+
+            results = "{}\t{}\t{}\t".format(site, site_nn_subset.Datetime.iloc[-forecast_win], 0.68)
+
+            scaler = scale_rto(site_nn_subset.iloc[:scaler_win,:])   
+            scaled_nn_preds = scaler*site_nn_subset['Neural Network']
+                
+            if dist == 'poisson':
+                _, u_quant, l_quant = sims.true_poisson_params(site_nn_subset.poisson_p, site_nn_subset)
+            else:
+                _, u_quant, l_quant = sims.negbin_params(site_nn_subset.negbin_p, site_nn_subset.negbin_seen_prop)
+
+            
+            l_quant = l_quant[-forecast_win:]
+            u_quant = u_quant[-forecast_win:]
+            scaled_nn_preds = scaled_nn_preds[-forecast_win:]
+            
+            rtos = np.ones(len(scaled_nn_preds)) * ( (scaled_nn_preds>=l_quant) & (scaled_nn_preds<=u_quant) )
+            rtos = rtos.values
+            
+            for k in range(0,len(rtos)):
+                results += '{}\t'.format(rtos[k])    
+            
+            results += '\n'
+            
+            with open(ofil, 'a') as f:
+                f.write(results)
+                f.close()
+            
+    return 
+
 
 def scaler_analysis(site_nn_data, scaler_wins):
     
@@ -89,12 +166,11 @@ def scaler_analysis(site_nn_data, scaler_wins):
     return to_return
 
 def t0_metric_analysis(site_info, site_nn_data, scaler_forecasts, metric_fil, amt = 1):   
-    site, weather_flag, smoothing_flag = site_info
+    source, dist = site_info
     for scaler_forecast in scaler_forecasts:
         scaler_win, forecast_win = scaler_forecast
-                
         for i in range(0, len(site_nn_data) - (scaler_win+forecast_win)):
-            to_write = '{}\t{}\t{}\t{}\t{}\t'.format(site, weather_flag, scaler_win, forecast_win, smoothing_flag)
+            to_write = '{}\t{}\t{}\t{}\t'.format(source, scaler_win, forecast_win, dist)
 
             #Get scaler_win+forecast_win days of nn predictions
             site_nn_subset = site_nn_data.copy(deep=True)
@@ -110,13 +186,13 @@ def t0_metric_analysis(site_info, site_nn_data, scaler_forecasts, metric_fil, am
             nn = forecast_days['Neural Network'].values
                         
             #Performance metrics on smoothed trap: rmse, nrmse, rel sq err
-            total_rmse = mse(trap, nn,  squared=False)
+            total_rmse = np.sqrt(mse(trap, nn))
            
             to_write = to_write + '{}\t{}\t'.format(site_nn_subset.Datetime.iloc[scaler_win].date(), total_rmse)
            
 
             for j in range(0,len(trap), amt):
-                wk_rmse = mse(trap[j:j+amt], nn[j:j+amt], squared=False)
+                wk_rmse = np.sqrt(mse(trap[j:j+amt], nn[j:j+amt]))
                 to_write = to_write + '{}\t'.format(wk_rmse)
 
             to_write = to_write + '\n'
@@ -128,8 +204,9 @@ def t0_metric_analysis(site_info, site_nn_data, scaler_forecasts, metric_fil, am
     return 
 
 
+
 def avg_metric_analysis(site_info, site_nn_data, scaler_forecasts, metric_fil, write_to_csv=True):
-    site, weather_flag, smoothing_flag = site_info
+    source, dist = site_info
     
     for scaler_forecast in scaler_forecasts:
         scaler_win, forecast_win = scaler_forecast
@@ -150,7 +227,7 @@ def avg_metric_analysis(site_info, site_nn_data, scaler_forecasts, metric_fil, w
             nn = forecast_days['Neural Network'].values
             
             #Performance metrics on smoothed trap: rmse
-            rmse = mse(trap, nn, squared=False)
+            rmse = np.sqrt(mse(trap, nn))
             rmses.append(rmse)
             
         if ((scaler_win==13) & (forecast_win==52)):
@@ -162,10 +239,11 @@ def avg_metric_analysis(site_info, site_nn_data, scaler_forecasts, metric_fil, w
         avg_rmse = np.average(rmses)               
         sig_rmse = np.std(rmses)
 
+
         if write_to_csv:
             with open(metric_fil, 'a') as f:
-                f.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(site, weather_flag, scaler_win, forecast_win,
-                                                                       smoothing_flag, avg_rmse, sig_rmse))
+                f.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(source, scaler_win, forecast_win, 
+                                                              dist, avg_rmse, sig_rmse))
                 
     return 
 
@@ -297,7 +375,7 @@ def plot_forecast_ints(site_info, i, date_list, forecast_win, scaled_nn_preds, s
 
     if not movie:
         nn_forecast = nn_forecast.values[:,0]       
-        rmse = round(mse(ref[-forecast_win:], nn_forecast, squared=False), ndigits=2)
+        rmse = round(np.sqrt(mse(ref[-forecast_win:], nn_forecast)), ndigits=2)
         forecast_ax.text(0.9945*forecast_ax.get_xlim()[-1], 0.95*forecast_ax.get_ylim()[-1], 'RMSE: {}'.format(rmse))
     
     if smoothing_flag:
