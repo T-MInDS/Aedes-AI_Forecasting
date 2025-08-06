@@ -24,6 +24,30 @@ if gpus:
 
 np.random.seed(14)
 
+def format_synthetic_for_training(data, fit_scaler = False, scaler = None):
+    cols = ['Avg_Temp', 'Precip', 'Humidity', 'weekly_mean', 'weekly_var']
+    if fit_scaler: 
+        to_scale = data[data.Year<2015]
+        scaler.fit(to_scale[cols].values)
+        
+    X_train = []; y_train = []; X_val = []; y_val = []; X_test = []; y_test = []; test_locs = []
+    for i in range(0,len(data)):
+        sample = data.iloc[i:i+90]
+        if not pd.isna(sample.iloc[-1]['weekly_mean']):
+            scaled = scaler.transform(sample[cols].values)        
+            yr = sample.Year.iloc[-1]
+            if yr<2015:
+                X_train.append(scaled[:,0:3])
+                y_train.append(scaled[-1,3:])
+            elif yr==2015:
+                X_val.append(scaled[:,0:3])
+                y_val.append(scaled[-1,3:])
+            else:
+                X_test.append(scaled[:,0:3])
+                y_test.append(scaled[-1,3:])
+                test_locs.append(sample.iloc[-1,0:4].values)
+    return X_train, y_train, X_val, y_val, X_test, y_test, test_locs
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('config', type=str, help='The json configuration file for the aedes model.')

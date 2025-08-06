@@ -3,8 +3,9 @@ import pandas as pd
 import os, sys, json
 sys.path.append( os.path.abspath(os.path.join('..')) )
 import utils.utils as utils
-import methods.forecast as forecast
+import utils.forecast as forecast
 from scipy.stats import nbinom as nbinom
+from scipy.stats import poisson as poisson
 from sklearn.metrics import mean_squared_error as mse
 
 import matplotlib.pyplot as plt
@@ -12,25 +13,16 @@ import matplotlib.dates as mdates
 
 
 # Opening config file
-f = open('fpaths_config.json')
+f = open('../fpaths_config.json')
 paths = json.load(f)
 
-raw_data_path = paths['raw_data']
-smoothed_data_path = paths['smoothed_data']
 
 
 
-def still_shot(airport_flag, site, idx, scaler_win, forecast_win, avg_mos):
-    if airport_flag:
-        nn_fil_name = '{}/{}_airport_raw_weekly_predictions.csv'.format(raw_data_path,site)
-    else:
-        nn_fil_name = '{}/{}_site_raw_weekly_predictions.csv'.format(raw_data_path,site)
-    
-    
-    site_nn_data = utils.load_csv(nn_fil_name)
-    site_nn_data.Datetime = pd.to_datetime(site_nn_data.Datetime)
+def still_shot(trap_data, dist, idx, scaler_win, forecast_win):
+    trap_data.Datetime = pd.to_datetime(trap_data.Datetime)
 
-    site_nn_subset = site_nn_data.copy(deep=True)
+    site_nn_subset = trap_data.copy(deep=True)
     site_nn_subset = site_nn_subset.iloc[idx:idx+scaler_win+forecast_win]
 
     date_list = site_nn_subset.Datetime.values
@@ -43,8 +35,8 @@ def still_shot(airport_flag, site, idx, scaler_win, forecast_win, avg_mos):
     ref = site_nn_subset['Ref']
     ref_sd = site_nn_subset['Ref_sd']
         
-    ref = ref/avg_mos
-    ref_sd = ref_sd/avg_mos
+    ref = ref
+    ref_sd = ref_sd
     
     trap_up_err = ref + ref_sd    
     trap_lo_err = ref - ref_sd
@@ -52,20 +44,21 @@ def still_shot(airport_flag, site, idx, scaler_win, forecast_win, avg_mos):
     
     nn_scale = scaled_nn_preds.iloc[:-forecast_win]  
     nn_forecast = scaled_nn_preds.iloc[-forecast_win:]
-        
+    
     #Plot (and label on graph) 68% quantile
-    sig = np.sqrt(nbinom.stats(ns, mean_p, moments='v'))
+    if dist == 'poisson':
+        sig = np.sqrt(poisson.stats(nn_forecast, moments='v'))
+    else:
+        sig = np.sqrt(nbinom.stats(ns, mean_p, moments='v'))
     
     u_forecast_sd = nn_forecast+sig
     l_forecast_sd = nn_forecast-sig
 
 
-    u_forecast_sd = u_forecast_sd/avg_mos
-    l_forecast_sd = l_forecast_sd/avg_mos
-    nn_scale = nn_scale/avg_mos
-    nn_forecast = nn_forecast/avg_mos
+    u_forecast_sd = u_forecast_sd
+    l_forecast_sd = l_forecast_sd
 
-    return x_forecast, u_forecast_sd, l_forecast_sd, x_scale, nn_scale, nn_forecast, ref, trap_lo_err, trap_up_err, date_list
+    return x_forecast, u_forecast_sd, l_forecast_sd, x_scale, nn_scale, nn_forecast, ref, trap_lo_err, trap_up_err, date_list, site_nn_subset
 
 def still_add_to_ax(ax, x_forecast, u_forecast_sd, l_forecast_sd, x_scale, nn_scale, nn_forecast, ref, trap_lo_err, trap_up_err, date_list, forecast_win):
     trap_col, nn_col = 'tab:orange', 'tab:blue'
