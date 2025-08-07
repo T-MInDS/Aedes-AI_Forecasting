@@ -1,0 +1,36 @@
+Precipitation units:
+Aedes-AI models:
+	Avg_Temp (C)
+	Precip (cm)
+	Humidity (%)
+
+raw Salinas weather csv:
+	Avg_Temp (C)
+	Precip (mm)
+	Humidity (%)
+
+raw LCD weather csv:
+	Avg_Temp (F)
+	Precip (in)
+	Humidity (%)
+
+raw DailySummaries weather csv:
+	Avg_Temp (F)
+	Precip (in)
+	Humidity (%)
+
+cleaned loc.csv:
+	Avg_Temp (C)
+	Precip (in)
+	Humidity (%)
+
+location.pd files:
+	Avg_Temp (C)
+	Precip (mm)
+	Humidity (%)	
+
+location_daily.pd files:
+	Avg_Temp (C)
+	Precip (cm)
+	Humidity (%)
+
