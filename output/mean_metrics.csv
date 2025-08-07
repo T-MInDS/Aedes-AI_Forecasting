@@ -1,5 +1,0 @@
-Abundance_source,Scaler_win,Forecast_win,Dist_flag,RMSE_mu,RMSE_sig
-Ceiba,13,52,poisson,2.360676055,0.587028244
-Ceiba,13,52,negbin,1.858038242,0.450985014
-Ceiba_mols,13,52,poisson,0.508426564,0.06894625
-Ceiba_mols,13,52,negbin,0.756840621,0.119380962
