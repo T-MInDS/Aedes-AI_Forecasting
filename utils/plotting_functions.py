@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import os, sys, json
 sys.path.append( os.path.abspath(os.path.join('..')) )
-import utils.utils as utils
+import utils.format_data_utils as format_data_utils
 import utils.forecast as forecast
 from scipy.stats import nbinom as nbinom
 from scipy.stats import poisson as poisson
