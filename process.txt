@@ -1,0 +1,6 @@
+1.base_model_training
+Train modified base Aedes-AI model
+
+2. format_data
+Format weather data and merge with MoLS
+
