@@ -24,15 +24,18 @@ def configure_data(raw_mols_path, nn_abundance_predictions):
         forecasted_weather[['Year', 'Month', 'Day']])
 
     samples, t0_list = [], []
-    for t0 in observed_weather.Datetime.iloc[0:120]:
+    count = 0
+    for t0 in observed_weather.Datetime:#.iloc[0:120]:
         sample = forecast_utils.configure_sample(t0=t0, observed_weather=observed_weather,
                                                  forecasted_weather=forecasted_weather, date_col='Datetime')
         if sample is not None:
             samples.append(sample)
             t0_list.append(t0)
+            count += 1 
+        if (count % 100) == 0:
+            print(count, '/', len(observed_weather))
 
     print(len(samples))
-    asdf
 
     forecast_utils.save_samples_to_hdf5(
         samples, t0_list, '{}/mixed_samples.h5'.format(nn_abundance_predictions))

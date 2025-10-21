@@ -61,50 +61,61 @@ def configure_sample(
     fct = prep(forecasted_weather)
 
     # --- Observed window: t0-scale_win .. t0-1
-    scale_start = t0 - pd.Timedelta(days=scale_win)
-    scale_end = t0 - pd.Timedelta(days=1)
-    expected_obs = pd.date_range(scale_start, scale_end, freq="D")
+    scale_start = pd.to_datetime(t0).floor("D") - pd.Timedelta(days=scale_win)
+    scale_end   = pd.to_datetime(t0).floor("D") - pd.Timedelta(days=1)
+    idx_obs = pd.date_range(scale_start, scale_end, freq="D")
 
-    obs_mask = obs[date_col].between(scale_start, scale_end, inclusive="both")
-    obs_win = obs.loc[obs_mask].copy().sort_values(date_col)
+    # --- Forecast window indices
+    f_start = pd.to_datetime(t0).floor("D")
+    f_end   = f_start + pd.Timedelta(days=f_win - 1)
+    idx_fct = pd.date_range(f_start, f_end, freq="D")
 
-    if len(obs_win) != scale_win or not pd.Index(obs_win[date_col].values).equals(expected_obs):
+    # Slice and reindex to validate completeness (no gaps)
+    obs_win = (obs.set_index(date_col)
+                  .loc[scale_start:scale_end]
+                  .reindex(idx_obs))
+    fct_win = (fct.set_index(date_col)
+                  .loc[f_start:f_end]
+                  .reindex(idx_fct))
+
+   
+    # If either window has any missing rows after reindex, bail
+    if obs_win.shape[0] != scale_win or obs_win.index.hasnans or obs_win.isna().all(axis=None):
         return None
-
-    # --- Forecast window: t0 .. t0+f_win
-    f_start = t0
-    f_end = t0 + pd.Timedelta(days=f_win-1)
-    expected_fct = pd.date_range(f_start, f_end, freq="D")
-
-    fct_mask = fct[date_col].between(f_start, f_end, inclusive="both")
-    fct_win = fct.loc[fct_mask].copy().sort_values(date_col)
-
-    if len(fct_win) != f_win or not pd.Index(fct_win[date_col].values).equals(expected_fct):
+    if fct_win.shape[0] != f_win or fct_win.index.hasnans or fct_win.isna().all(axis=None):
         return None
 
     # --- Combine
 
-    combined = pd.concat([obs_win, fct_win], ignore_index=True)
+    combined = pd.concat([obs_win, fct_win], axis=0)
+    combined.index.name = date_col
+    combined = combined.reset_index().sort_values(date_col).reset_index(drop=True)
 
     # ---- Map observed Ref to ALL combined dates (even forecast rows)
     if ref_col in obs.columns:
-        ref_map = dict(zip(obs[date_col], obs[ref_col]))
-        combined[ref_col] = combined[date_col].map(ref_map)
-        combined[ref_col] = combined[ref_col].interpolate().ffill().bfill()
+        ref_series = obs.set_index(date_col)[ref_col]
+        combined[ref_col] = combined[date_col].map(ref_series)
+        # Interpolate only for numeric refs; otherwise leave as is
+        if pd.api.types.is_numeric_dtype(ref_series):
+            combined[ref_col] = (combined[ref_col]
+                                 .interpolate(method="linear", limit_direction="both")
+                                 .ffill()
+                                 .bfill())
+    
     return combined
 
 
 def save_samples_to_hdf5(samples, t0_list, opath):
     """
     Save a list of DataFrames to an HDF5 file.
-    Each sample is stored under a key: /sample_<YYYY-MM-DD>
+    Each sample is stored under a key: /sample_<YYYYMMDD>
     """
     if os.path.exists(opath):
         os.remove(opath)
 
     with pd.HDFStore(opath, mode="w") as store:
         for df, t0 in zip(samples, t0_list):
-            key = f"sample_{pd.to_datetime(t0).strftime('%Y-%m-%d')}"
+            key = f"sample_{pd.to_datetime(t0).strftime('%Y%m%d')}"
             # allows efficient chunked access
             store.put(key, df, format="table")
     print(f"Saved {len(samples)} samples to {opath}")
