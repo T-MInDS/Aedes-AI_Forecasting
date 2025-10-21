@@ -1,17 +1,8 @@
 {
 	"nn_abundance_predictions": "../data/nn_abundance_predictions",
 	"weather_data": "../data/weather",
-	"trap_simulations": "../data/trap_sims",
 	"raw_mols": "../data/raw_mols_predictions",
-	"model_files": "../utils/model_files",
-	"mean_metric_fil": "../output/mean_metrics.csv",
-	"amt_metrics": "../output/amt_metrics",
-	"scaling_rto_fil": "../output/scaling_rtos.csv",
-	"baseline_scaling_rto_fil": "../output/baseline_scaling_rtos.csv",
-	"coverages_path": "../output/coverages/",
-	"metric_figures_path": "../output/metric_figures/",
-	"misc_figures_path": "../output/misc_figures/",
-	"comparison_path": "../output/prediction_comparisons"
+	"model_files": "../utils/model_files"
 }
 
 

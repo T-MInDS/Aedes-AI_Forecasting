@@ -25,7 +25,7 @@ import pandas as pd
 import numpy as np
 from utils import gen_utils
 from utils import predictions
-from utils import finetuning_utils
+from utils import format_data_utils
 
 import matplotlib.pyplot as plt
 
@@ -75,13 +75,13 @@ def get_finetuning_samples(train, val, test, scaler):
     """Get finetuning samples from training, validation, and test datasets.
 
     """
-    X_train, y_train, locs_train = finetuning_utils.format_finetuning_samples(
+    X_train, y_train, locs_train = format_data_utils.format_finetuning_samples(
         train, scaler)
 
-    X_val, y_val, locs_val = finetuning_utils.format_finetuning_samples(
+    X_val, y_val, locs_val = format_data_utils.format_finetuning_samples(
         val, scaler)
 
-    X_test, y_test, locs_test = finetuning_utils.format_finetuning_samples(
+    X_test, y_test, locs_test = format_data_utils.format_finetuning_samples(
         test, scaler)
 
     # Shuffle train and val data
@@ -122,22 +122,25 @@ def train_finetune_model(base_model, X_train, y_train, X_val, y_val, config):
 
     history_finetune = finetuned_model.fit(X_train, y_train, validation_data=(X_val, y_val), **config['fit'],
                                            callbacks=[tf.keras.callbacks.TensorBoard(), tf.keras.callbacks.EarlyStopping(patience=15, restore_best_weights=True)])
-    plot_finetune_history(history_finetune)
-    return finetuned_model
+
+    return history_finetune, finetuned_model
 
 
-def plot_finetune_history(history):
+def plot_finetune_history(history, model_files_path):
     """Plot the training and validation loss over epochs.
 
     Args:
         history: Keras History object containing training history.
     """
-    plt.plot(history.history['loss'], label='train')
-    plt.plot(history.history['val_loss'], label='validation')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.show()
+    fig, axs = plt.subplots()
+    axs.plot(history.history['loss'], label='train')
+    axs.plot(history.history['val_loss'], label='validation')
+    axs.set_xlabel('Epoch')
+    axs.set_ylabel('Loss')
+    axs.legend()
+    fig.savefig('{}/gru_avg_temp_finetune_history.png'.format(model_files_path),
+                bbox_inches='tight', dpi=300)
+    return
 
 
 def main():
@@ -153,11 +156,14 @@ def main():
     X_train, y_train, locs_train, X_val, y_val, locs_val, X_test, y_test, locs_test = get_finetuning_samples(
         train, val, test, scaler)
 
-    finetuned_model = train_finetune_model(
+    history_finetune, finetuned_model = train_finetune_model(
         base_model, X_train, y_train, X_val, y_val, config)
+    plot_finetune_history(history_finetune, model_files_path)
+
     finetuned_model.save(
         '{}/gru_avg_temp_finetuned.h5'.format(model_files_path))
     print('Model saved to {}/gru_avg_temp_finetuned.h5'.format(model_files_path))
+    return
 
 
 if __name__ == "__main__":
