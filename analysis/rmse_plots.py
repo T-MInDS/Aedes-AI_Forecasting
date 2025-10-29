@@ -111,7 +111,7 @@ def main():
     _, trap_catch_path, _, _, _ = gen_utils.load_input_paths(config)
     _, output_path = gen_utils.load_output_paths(config)
 
-    if False:
+    if True:
         tabular_rmses(trap_catch_path, output_path)
     
     if True:
