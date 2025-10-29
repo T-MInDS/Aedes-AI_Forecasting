@@ -1,9 +1,16 @@
 {
-	"nn_abundance_predictions": "../data/nn_abundance_predictions",
-	"weather_data": "../data/weather",
-	"raw_mols": "../data/raw_mols_predictions",
-	"model_files": "../utils/model_files"
+  "input": {
+    "input_fil_path": "../data",
+    "nn_abundance_predictions": "../data/nn_abundance_predictions",
+    "weather_data": "../data/weather",
+    "raw_mols": "../data/raw_mols_predictions",
+    "model_files": "../utils/model_files",
+	  "trap_catches": "../data/trap_catches"
+  },
+  "output": {
+    "output_fil_path": "../output",
+    "coverages": "../output/coverages.csv"
+  }
 }
-
 
 
