@@ -1,5 +1,5 @@
 {
-  "model": "gru_model",
+  "model": "finetuned",
   "data": {
     "data_shape": [
       90,
@@ -19,9 +19,9 @@
     "epochs": 100
   },
   "files": {
-    "training": "../utils/model_files/train_avg_data.pd",
+    "training": "../data/raw_mols_predictions/San_Juan_MoLS.csv",
     "validation": "../utils/model_files/val_avg_data.pd",
     "testing": "../utils/model_files/test_avg_data.pd",
-    "model": "../utils/model_files/gru_avg_temp.keras"
+    "model": "../utils/model_files/gru_avg_temp_finetuned.keras"
   }
 }

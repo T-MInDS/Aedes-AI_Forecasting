@@ -17,25 +17,21 @@ from itertools import chain
 import pdb
 from glob import glob
 from scipy.signal import savgol_filter
-
-"""
-Function: r2_keras        
-----------
-Use: Loss function for neural networks. Used to load .h5 files
-"""
+from keras.saving import register_keras_serializable
 
 
+@register_keras_serializable(package="metrics")
 def r2_keras(y_true, y_pred):
-    SS_res = K.sum(K.square(y_true - y_pred))
-    SS_tot = K.sum(K.square(y_true - K.mean(y_true)))
-    return (1 - SS_res/(SS_tot + K.epsilon()))
+    """Coefficient of determination (R²) for regression models."""
+    y_true = tf.cast(y_true, tf.float32)
+    y_pred = tf.cast(y_pred, tf.float32)
 
+    ss_res = tf.reduce_sum(tf.square(y_true - y_pred))
+    mean_y = tf.reduce_mean(y_true)
+    ss_tot = tf.reduce_sum(tf.square(y_true - mean_y))
 
-"""
-Function: smooth_signal        
-----------
-Use: Apply Savitzy Golay filter 
-"""
+    eps = tf.keras.backend.epsilon()
+    return 1.0 - ss_res / (ss_tot + eps)
 
 
 def smooth_signal(nn):
@@ -44,7 +40,7 @@ def smooth_signal(nn):
     threshold = 0.925
     nn = savgol_filter(nn, 11, 3, mode='nearest')
     it = 0
-    while (pd.Series(nn).autocorr(11) < threshold-0.01) and (it < 50):
+    while (pd.Series(nn).autocorr(11) < threshold - 0.01) and (it < 50):
         nn = savgol_filter(nn, 11, 3, mode='nearest')
         it += 1
     nn[nn < 0] = 0
@@ -52,7 +48,7 @@ def smooth_signal(nn):
 
 
 """
-Function: format_data        
+Function: format_data
 ----------
 Use: Function scales input data between [0, 1] and formats into 90-day samples.
 
@@ -73,7 +69,7 @@ Returns:
   If fit_scaler = False,
       returns (scaled input data, spatiotemporal information)
   If fit_scaler = True,
-      returns (scaled input data, spatiotemporal information, scaler fit to data) 
+      returns (scaled input data, spatiotemporal information, scaler fit to data)
 """
 
 
@@ -87,19 +83,27 @@ def format_data(data, data_shape, scaler=None, fit_scaler=False):
     if fit_scaler:
         scaler = MinMaxScaler()
         scaler.fit(data.iloc[:, -(data_shape[1] + 1):])
+
     groups = data.groupby(by=0)
     X, counties = list(), list()
     for _, subset in groups:
         for i in range(len(subset)):
-            if (i+data_shape[0]) < len(subset):
+            if (i + data_shape[0]) < len(subset):
                 X.append(scaler.transform(
                     subset.iloc[i: i + data_shape[0], -(data_shape[1] + 1):].values))
-                counties.append(subset.iloc[i+data_shape[0], 0:4])
-    return (np.array(X), np.array(counties), ref) if not fit_scaler else (np.array(X), np.array(counties), scaler, ref)
+                counties.append(subset.iloc[i + data_shape[0], 0:4])
+    return (
+        np.array(X),
+        np.array(counties),
+        ref) if not fit_scaler else (
+        np.array(X),
+        np.array(counties),
+        scaler,
+        ref)
 
 
 """
-Function: generate_predictions        
+Function: generate_predictions
 ----------
 Use: Function uses parameter scaler (MinMaxScaler) to transform input data
       in samples of size data_shape, or calculates scaler off of given data.
@@ -114,7 +118,7 @@ Input Parameters:
           Counties, Year, Month, Day, Precipitation, Max Temp, Min Temp,
           Humidity, Ref (replace with 0 if no reference data available)
           Data is a .pd file.
-          
+
   data_shape: shape of one training sample for the model (90x4)
 
   scaler: MinMaxScaler to scale data to [0,1] and based off of training data.
@@ -132,7 +136,7 @@ Returns:
 
 def gen_preds(model, data, data_shape, scaler=None, fit_scaler=False, smooth=True):
     # Scale data to [0,1] and reformat to 90-day samples
-    if fit_scaler == True:
+    if fit_scaler:
         X, locs, scaler, ref = format_data(data, data_shape, None, fit_scaler)
     else:
         X, locs, ref = format_data(data, data_shape, scaler, fit_scaler)
@@ -148,14 +152,14 @@ def gen_preds(model, data, data_shape, scaler=None, fit_scaler=False, smooth=Tru
     data_nn[:, -1] = model_preds[:, 0]
     data_nn = scaler.inverse_transform(data_nn)
 
-    if smooth == True:
+    if smooth:
         smooth_locs = np.unique(locs[:, 0])
         for i in range(0, len(smooth_locs)):
             indices = np.argwhere(locs[:, 0] == smooth_locs[i])
             data_nn[indices, -
                     1] = smooth_signal(data_nn[indices, -1][:, 0])[:, np.newaxis]
 
-    if ref == False:
+    if not ref:
         results = np.concatenate([locs, np.zeros((len(data_ref), 1)),
                                   np.reshape(data_nn[:, -1], (len(data_nn), 1))], axis=1)
     else:
