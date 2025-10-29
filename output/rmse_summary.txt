@@ -1,0 +1,10 @@
+Distribution: poisson
+Avg. trap catch: 10.4517
+RMSE mu: 1.5617; RMSE sig: 1.0958
+Approx err mu: 0.1494; Approx err sig: 0.1048
+--------------------------------------------------
+Distribution: negbin
+Avg. trap catch: 8.5083
+RMSE mu: 1.3967; RMSE sig: 0.8815
+Approx err mu: 0.1642; Approx err sig: 0.1036
+--------------------------------------------------
