@@ -15,12 +15,14 @@ import utils.forecasting_utils as forecast_utils
 import utils.analysis_utils as analysis_utils
 
 import matplotlib.dates as mdates
+import matplotlib.cm as cm
+
 from sklearn.metrics import mean_squared_error as mse
 
 # autopep8: on
 
 
-#---------------Representative Forecasts functions
+#---------------Reresentative Forecasts functions
 def create_legend(fig, bottom_margin, bbox_to_anchor):
     from matplotlib.lines import Line2D
     from matplotlib.patches import Rectangle
@@ -72,11 +74,11 @@ def create_legend(fig, bottom_margin, bbox_to_anchor):
 
     # Keep legend out of layout calculations so it won't be clipped
     leg.set_in_layout(False)
-    
+
     return fig
 
 
-def format_single_plot(ax, sample, dist):
+def format_forecast_single_plot(ax, sample, dist):
     trial_cols = forecast_utils.trial_names()
     trap_col, pred_col, tru_col = 'tab:orange', 'tab:blue', 'tab:green'
     s = 4
@@ -119,3 +121,23 @@ def format_single_plot(ax, sample, dist):
     ax.text(0.97, 0.95, f'RMSE: {rmse:.2f}', transform=ax.transAxes, ha='right', va='top', fontsize='small')
 
     return ax
+
+
+#---------------Error bar plots
+def format_single_bar_plot(ax, avgs, stds, labels = []):
+    if labels is None:
+        labels = ['RMSE(wks. 1-4)', 'MAE(wk. 1)', 'MAE(wk. 2)', 'MAE(wk. 3)', 'MAE(wk. 4)']
+    
+    # Define colors
+    #cmap = cm.get_cmap('viridis', len(labels) - 1)  # colormap for MAEs
+    #colors = ['maroon'] + [cmap(i) for i in range(len(labels) - 1)]
+    colors = ['#8B0000',  # deep maroon for RMSE
+              '#6BAED6',  # light blue
+              '#4292C6',  # medium blue
+              '#2171B5',  # darker blue
+              '#084594']  # navy
+    ax.bar(labels, avgs, color=colors, width=0.8)
+    ax.errorbar(labels, avgs, ls='none', yerr=stds, ecolor='k', elinewidth=0.8)
+    ax.set_ylabel('Average Forecast Error')
+    
+    return
