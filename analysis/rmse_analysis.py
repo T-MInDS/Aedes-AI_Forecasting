@@ -7,6 +7,8 @@ PROJECT_ROOT = os.path.abspath(os.path.join(THIS_DIR, '..'))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
+import csv
+
 import pandas as pd
 import numpy as np
 import utils.forecasting_utils as forecast_utils
@@ -20,44 +22,41 @@ from sklearn.metrics import mean_squared_error as mse
 #---------------Error calculation functions
 def point_prediction_error(predictions, Ref):
     results = []
+    rmse = np.sqrt(mse(predictions, Ref))
+    results.append(rmse)
+
     for i in range(len(Ref)):
         abs_err = np.abs(predictions.iloc[i] - Ref.iloc[i]) / Ref.iloc[i]
         results.append(abs_err)
-
-    rmse = np.sqrt(mse(predictions, Ref))
-    results.append(rmse)
     
     return results
 
 #---------------Saving results functions
-def add_result_line(scores, result, result_fil):
-    for score in scores:
-        result += f'{score}\t'
-    result += '\n'
-    with open(result_fil, 'a') as f:
-        f.write(result)
-        f.close()
+def add_result_line(scores, prefix, result_fil):
+    with open(result_fil, "a", newline="") as f:
+        writer = csv.writer(f, delimiter="\t")
+        writer.writerow(prefix + scores)
     return
 
 def prepare_result_fil(dist, opath):
     result_fil = f'{opath}/{dist}_rmses.csv'
-    header = 'dist\tt_0\trmse\twk1_abs_err\twk2_abs_err\twk3_abs_err\twk4_abs_err'
-    header += '\n'
-    with open(result_fil, 'w') as f:
-        f.write(header)
-        f.close()
+    header = ['dist','t_0','RMSE','wk1_abs_err','wk2_abs_err','wk3_abs_err','wk4_abs_err']
+    with open(result_fil, 'w', newline="") as f:
+        csv.writer(f, delimiter="\t").writerow(header)
+
     return result_fil
 
 
-#---------------Processing samples functions
+#---------------Processing samples function
 def process_samples(samples, t0_list, output_path, dist):
     result_fil = prepare_result_fil(dist, output_path)
 
     for sample, t0 in zip(samples, t0_list):
-        result = f'{dist}\t{t0}'
+        t0_str = pd.to_datetime(t0).strftime("%Y-%m-%d")
+        prefix = [dist, t0_str]
         forecast = sample[sample.Location == 'Forecast']
         scores = point_prediction_error(forecast['Point_predictions'], forecast['Ref'])
-        add_result_line(scores, result, result_fil)
+        add_result_line(scores, prefix, result_fil)
     print(f'{dist} point prediction scores saved in {result_fil}')       
     return
 
