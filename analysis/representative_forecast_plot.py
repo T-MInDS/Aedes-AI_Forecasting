@@ -63,11 +63,11 @@ def monthly_indices(t0_list, year=2017):
 def high_low_skill(poisson25, poisson75, negbin25, negbin75, output_path):
     #Create the representative forecasts of high and low skill
     fig, axs = plt.subplots(2,2, figsize=(8,4.5))
-    axs[0,0] = plt_utils.format_single_plot(axs[0,0], poisson25, 'poisson')
-    axs[0,1] = plt_utils.format_single_plot(axs[0,1], poisson75, 'poisson')
+    axs[0,0] = plt_utils.format_forecast_single_plot(axs[0,0], poisson25, 'poisson')
+    axs[0,1] = plt_utils.format_forecast_single_plot(axs[0,1], poisson75, 'poisson')
 
-    axs[1,0] = plt_utils.format_single_plot(axs[1,0], negbin25, 'negbin')
-    axs[1,1] = plt_utils.format_single_plot(axs[1,1], negbin75, 'negbin')
+    axs[1,0] = plt_utils.format_forecast_single_plot(axs[1,0], negbin25, 'negbin')
+    axs[1,1] = plt_utils.format_forecast_single_plot(axs[1,1], negbin75, 'negbin')
 
     axs[0,0].set_ylabel('Trap Counts')
     axs[1,0].set_ylabel('Trap Counts')
@@ -111,13 +111,13 @@ def forecast_examples(nn_preds_path, output_path):
             #Add Poisson forecasts
             ax = axs[row, 0]
             sample = poissons[idx]
-            plt_utils.format_single_plot(ax, sample, 'poisson')
+            plt_utils.format_forecast_single_plot(ax, sample, 'poisson')
             ax.set_ylabel('Trap Counts')
         
             #Add Neg Bin forecasts
             ax = axs[row, 1]
             sample = negbins[idx]
-            plt_utils.format_single_plot(ax, sample, 'negbin')
+            plt_utils.format_forecast_single_plot(ax, sample, 'negbin')
 
         axs[0,0].set_title('Poisson')
         axs[0,1].set_title('Negative Binomial')

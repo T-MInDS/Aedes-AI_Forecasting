@@ -26,7 +26,7 @@ def point_prediction_error(predictions, Ref):
     results.append(rmse)
 
     for i in range(len(Ref)):
-        abs_err = np.abs(predictions.iloc[i] - Ref.iloc[i]) / Ref.iloc[i]
+        abs_err = np.abs(predictions.iloc[i] - Ref.iloc[i])
         results.append(abs_err)
     
     return results

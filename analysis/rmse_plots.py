@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 
 import utils.gen_utils as gen_utils
 import utils.forecasting_utils as forecast_utils
+import utils.plotting_utils as plt_utils
 
 # autopep8: on
 
@@ -68,9 +69,40 @@ def tabular_rmses(trap_catch_path, output_path):
     print(f'\nSummary saved to: {results_file}')
     return
 
-#---------------Functions for Avg. RMSE + abs err plot
-def rmse_plot(output_path):
+#---------------Functions for err plot
+def err_plot(output_path):
+    poisson = pd.read_csv(f'{output_path}/poisson_rmses.csv', sep='\t')
+    negbin = pd.read_csv(f'{output_path}/negbin_rmses.csv', sep='\t')
     
+    score_cols = ['RMSE', 'wk1_abs_err', 'wk2_abs_err',
+                  'wk3_abs_err', 'wk4_abs_err']
+    labels = [
+        r'RMSE (wks. 1–4)',
+        r'$|$Error$|$ (wk 1)',
+        r'$|$Error$|$ (wk 2)',
+        r'$|$Error$|$ (wk 3)',
+        r'$|$Error$|$ (wk 4)'
+    ]
+
+    fig, axs = plt.subplots(2, figsize=(8,4.5), sharex=True, sharey=True)
+
+    dists = {'Poisson': poisson[score_cols], 'Negative Binomial': negbin[score_cols]}
+    for ax, (dist, scores) in zip(axs, dists.items()):
+        avgs = scores.mean()
+        stds = scores.std()
+        plt_utils.format_single_bar_plot(ax, avgs, stds, labels)
+        #ax.annotate(f'{dist}', xy=(0, 0.5), xycoords='axes fraction', 
+        #            xytext=(-50, 0), textcoords='offset points',
+        #            ha='right', va='center', fontsize='large', rotation=90, 
+        #            bbox=dict(boxstyle="round,pad=0.3", fc='white', ec='black', lw=0.8))
+        ax.set_title(dist)#, fontsize='medium')
+
+    
+    axs[1].set_xticklabels(labels, rotation=0)
+    #axs[0].set_title('Forecast Point Prediction Scores', fontsize='medium')
+
+    fig.tight_layout()
+    fig.savefig(f'{output_path}/error_bar_plot.png', dpi=300, bbox_inches='tight')        
     return
 
 
@@ -79,7 +111,11 @@ def main():
     _, trap_catch_path, _, _, _ = gen_utils.load_input_paths(config)
     _, output_path = gen_utils.load_output_paths(config)
 
-    tabular_rmses(trap_catch_path, output_path)
+    if False:
+        tabular_rmses(trap_catch_path, output_path)
+    
+    if True:
+        err_plot(output_path)
 
 
 if __name__ == "__main__":
