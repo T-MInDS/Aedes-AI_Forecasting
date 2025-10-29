@@ -54,7 +54,7 @@ def process_samples(samples, t0_list, output_path, dist):
     result_fil = prepare_result_fil(dist, output_path)
 
     for sample, t0 in zip(samples, t0_list):
-        result = f'{dist}\{t0}'
+        result = f'{dist}\t{t0}'
         forecast = sample[sample.Location == 'Forecast']
         scores = point_prediction_error(forecast['Point_predictions'], forecast['Ref'])
         add_result_line(scores, result, result_fil)
