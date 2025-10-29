@@ -51,7 +51,7 @@ def format_observed(weather_path: str):
                  'Avg_Temp', 'Precip', 'Humidity', 'Ref']]
     data.to_pickle('{}/San_Juan.pd'.format(weather_path))
 
-    data['Precip'] = data['Precip']/10
+    data['Precip'] = data['Precip'] / 10
     data.to_pickle('{}/San_Juan_daily.pd'.format(weather_path))
 
     return data
@@ -79,7 +79,7 @@ def format_forecast(weather_path: str):
                  'Avg_Temp', 'Precip', 'Humidity', 'Ref']]
     data.to_pickle('{}/Ceiba.pd'.format(weather_path))
 
-    data['Precip'] = data['Precip']/10
+    data['Precip'] = data['Precip'] / 10
     data.to_pickle('{}/Ceiba_daily.pd'.format(weather_path))
 
     return data
@@ -99,13 +99,17 @@ def process_mols(raw_mols_path: str):
     data_utils.save_weather_mols()
 
     # Manual process: Obtain corresponding MoLS predictions for loc_daily.pd files and store them in raw_mols_path
-    # Finally, 90 day burn in and burn out
+    # Finally, 180 day burn in and 90 day burn out
 
     fils = glob.glob('{}/*_MoLS.csv'.format(raw_mols_path))
     for fil in fils:
         data = pd.read_csv(fil)
-        data = data.iloc[10:-90].reset_index(drop=True)
+        data = data.iloc[180:-90].reset_index(drop=True)
         data.to_csv(fil, index=False)
+
+        test = data[data.Year>2016]
+        test_fil = fil.replace('MoLS', 'MoLS_test')
+        test.to_csv(test_fil, index=False)
     return
 
 

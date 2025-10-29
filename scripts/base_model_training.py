@@ -45,7 +45,7 @@ def update_training_config(config_path: str, model_files_path: str) -> None:
         config = json.load(f)
 
     config['data']['data_shape'] = [90, 3]
-    config['files']['model'] = f'{model_files_path}/gru_avg_temp.h5'
+    config['files']['model'] = f'{model_files_path}/gru_avg_temp.keras'
     config['files']['training'] = f'{model_files_path}/train_avg_data.pd'
     config['files']['validation'] = f'{model_files_path}/val_avg_data.pd'
     config['files']['testing'] = f'{model_files_path}/test_avg_data.pd'
@@ -82,6 +82,7 @@ def train(model_files_path: str, config_name: str = "gru_avg_temp_config.json") 
         config = json.load(fp)
 
     model_file = os.path.expanduser(config['files']['model'])
+
     if os.path.exists(model_file):
         model = tf.keras.models.load_model(
             model_file, custom_objects={'r2_keras': predictions.r2_keras}
@@ -150,6 +151,8 @@ def train(model_files_path: str, config_name: str = "gru_avg_temp_config.json") 
     X_train, y_train = training_utils.split_and_shuffle(train_df)
     X_val, y_val = training_utils.split_and_shuffle(val_df)
     X_test, y_test = training_utils.split_and_shuffle(test_df)
+    print(X_train.shape, y_train.shape)
+    print(X_val.shape, y_val.shape)
 
     # compile
     opt_name = config['compile']['optimizer']
@@ -178,13 +181,17 @@ def train(model_files_path: str, config_name: str = "gru_avg_temp_config.json") 
     )
 
     # save
-    model.save(model_file)  # h5 is inferred by extension in TF2.9+
+    model.save(model_file)
     print('Model saved to ' + model_file)
+    save_history_plots(history)
+    return
 
 
 # ------------------------- TEST / PREDICT -------------------------
 
-def test_predictions(model_files_path: str, config_name: str = "gru_avg_temp_config.json") -> pd.DataFrame:
+def test_predictions(
+        model_files_path: str,
+        config_name: str = "gru_avg_temp_config.json") -> pd.DataFrame:
     """Generate and return predictions from a trained GRU model on the test dataset."""
     cfg_path = os.path.join(os.path.expanduser(model_files_path), config_name)
     with open(cfg_path) as fp:
@@ -226,15 +233,51 @@ def plot_predictions(results: pd.DataFrame, location_substr: str = 'Avondale') -
         print(f"No rows matched location substring: {location_substr}")
         return
 
-    plt.figure()
-    plt.plot(subset.Datetime, subset.MoLS, label='MoLS')
-    plt.plot(subset.Datetime, subset['Neural Network'], label='Neural Network')
-    plt.xlabel('Date')
-    plt.ylabel('Abundance (units of MoLS output)')
-    plt.title(f'Predictions for {location_substr}')
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+    fig, axs = plt.subplots(figsize=(8, 5))  # you can adjust figure size if desired
+
+    axs.plot(subset.Datetime, subset.MoLS, label='MoLS')
+    axs.plot(subset.Datetime, subset['Neural Network'], label='Neural Network')
+
+    axs.set_xlabel('Date')
+    axs.set_ylabel('Abundance (units of MoLS output)')
+    axs.set_title(f'Predictions for {location_substr}')
+    axs.legend()
+
+    fig.tight_layout()
+    fig.savefig('../output/training/base_testing.png', dpi=300, bbox_inches='tight')
+    return
+
+
+def save_history_plots(history, out_dir="../output/training", prefix="base"):
+    """Save training curves from a Keras History object, plus a CSV."""
+    os.makedirs(out_dir, exist_ok=True)
+
+    hist = history.history
+    epochs = range(1, len(hist.get("loss", [])) + 1)
+
+    # --- Loss curve ---
+    fig, ax = plt.subplots(figsize=(7, 4))
+    ax.plot(epochs, hist["loss"], label="train")
+    if "val_loss" in hist:
+        ax.plot(epochs, hist["val_loss"], label="val")
+    ax.set_xlabel("Epoch")
+    ax.set_ylabel("Loss")
+    ax.set_title("Training Loss")
+    ax.legend()
+    fig.tight_layout()
+
+    loss_path = os.path.join(out_dir, f"{prefix}_loss.png")
+    fig.savefig(loss_path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
+    # --- Save raw history to CSV for reproducibility ---
+    hist_df = pd.DataFrame(hist)
+    csv_path = os.path.join(out_dir, f"{prefix}_history.csv")
+    hist_df.to_csv(csv_path, index=False)
+
+    print(f"Saved: {loss_path}")
+    print(f"Saved: {csv_path}")
+    return
 
 
 def run_all(model_files_path) -> None:
@@ -256,46 +299,56 @@ def run_all(model_files_path) -> None:
 # ------------------------- CLI -------------------------
 
 def main():
-    _, _, _, model_files_path, _ = gen_utils.load_paths(args.paths)
-
     parser = argparse.ArgumentParser(
-        description="Train/test GRU for Aedes-AI with mean temp input.")
+        description="Train/test GRU for Aedes-AI with mean temp input."
+    )
+    parser.add_argument(
+        "--paths",
+        default="../fpaths_config.json",
+        help="Path to JSON with {weather_data, raw_mols, nn_abundance_predictions, model_files}."
+    )
+    parser.add_argument(
+        "--config-name",
+        default="gru_avg_temp_config.json",
+        help="Name of the model config file inside model_files_path."
+    )
+    parser.add_argument("--update-config", action="store_true",
+                        help="Update the training config paths and data shape to [90, 3].")
+    parser.add_argument("--train", action="store_true",
+                        help="Train the model.")
+    parser.add_argument("--test", action="store_true",
+                        help="Run test predictions and print head().")
+    parser.add_argument(
+        "--plot",
+        metavar="LOCATION_SUBSTR",
+        nargs="?",
+        const="Avondale",
+        help="Plot predictions for locations containing this substring (default: Avondale).")
 
-    if len(sys.argv) > 1:
-        parser.add_argument("--paths", default="../fpaths_config.json",
-                            help="Path to JSON with {weather_data, raw_mols, nn_abundance_predictions, model_files}.")
-        parser.add_argument("--config-name", default="gru_avg_temp_config.json",
-                            help="Name of the model config file inside model_files_path.")
-        parser.add_argument("--update-config", action="store_true",
-                            help="Update the training config paths and data shape to [90, 3].")
-        parser.add_argument("--train", action="store_true",
-                            help="Train the model.")
-        parser.add_argument("--test", action="store_true",
-                            help="Run test predictions and print head().")
-        parser.add_argument("--plot", metavar="LOCATION_SUBSTR", nargs="?", const="Avondale",
-                            help="Plot predictions for locations containing this substring (default: Avondale).")
+    args = parser.parse_args()
 
-        args = parser.parse_args()
+    _, _, _, model_files_path, _ = gen_utils.load_paths(args.paths)
+    cfg_path = os.path.join(os.path.expanduser(model_files_path), args.config_name)
 
-        cfg_path = os.path.join(os.path.expanduser(
-            model_files_path), args.config_name)
+    did_any = False
+    if args.update_config:
+        update_training_config(cfg_path, model_files_path)
+        print(f"Updated config at {cfg_path}")
+        did_any = True
 
-        if args.update_config:
-            update_training_config(cfg_path, model_files_path)
-            print(f"Updated config at {cfg_path}")
+    if args.train:
+        train(model_files_path, config_name=args.config_name)
+        did_any = True
 
-        if args.train:
-            train(model_files_path, config_name=args.config_name)
+    if args.test or args.plot is not None:
+        df = test_predictions(model_files_path, config_name=args.config_name)
+        if args.test:
+            print(df.head())
+        if args.plot is not None:
+            plot_predictions(df, location_substr=args.plot)
+        did_any = True
 
-        if args.test or args.plot:
-            df = test_predictions(
-                model_files_path, config_name=args.config_name)
-            if args.test:
-                print(df.head())
-            if args.plot is not None:
-                plot_predictions(df, location_substr=args.plot)
-    else:
-        # No args: run all steps with defaults
+    if not did_any:
         run_all(model_files_path)
 
 
