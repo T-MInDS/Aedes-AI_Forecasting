@@ -16,6 +16,7 @@ import utils.predictions as predictions
 
 # autopep8: on
 
+
 def _is_ok(v, allow_inf=True):
     if pd.isna(v):
         return True
@@ -34,7 +35,7 @@ def configure_data(raw_mols_path, samples_path, model, scaler, data_shape):
 
     observed_weather.rename(columns={'Ref': 'MoLS'}, inplace=True)
     forecasted_weather.rename(columns={'Ref': 'MoLS'}, inplace=True)
-    
+
     # --- select only start-of-week dates (weeks ending Saturday) ---
     observed_weather['Week'] = observed_weather['Datetime'].dt.to_period('W-WED')
     # get first date of each weekly period (start of that week)
@@ -44,7 +45,7 @@ def configure_data(raw_mols_path, samples_path, model, scaler, data_shape):
         .sort_values()
         .reset_index(drop=True)
     )
-    
+
     # Drop to avoid Period dtype leaking into downstream scalers
     observed_weather.drop(columns=['Week'], inplace=True)
 
@@ -58,45 +59,47 @@ def configure_data(raw_mols_path, samples_path, model, scaler, data_shape):
         if sample is not None:
             temp = sample.drop(
                 columns=['Datetime'])
-            
+
             if 'Ref' in temp.columns:
                 temp = temp.rename(columns={'Ref': 'MoLS'})
             temp['Location'] = 'San_Juan'
-    
+
             results = create_nn_predictions(temp,
                                             model,
                                             scaler,
                                             data_shape)
             results['Datetime'] = pd.to_datetime(results[['Year', 'Month', 'Day']])
-            
+
             if 'MoLS' in results.columns:
                 results.drop(columns=['MoLS'], inplace=True)
-            
+
             merged = pd.merge(sample, results[['Datetime', 'Neural Network']], on=[
                               'Datetime'], how='outer')
-            
+
             merged = merged[merged['Neural Network'].notna()].reset_index()
-            
+
             observed = forecast_utils.convert_to_weekly(merged[merged.Location == 'San_Juan'])
             forecast = forecast_utils.convert_to_weekly(merged[merged.Location == 'Ceiba'])
 
-            weekly = pd.concat([forecast, observed]).sort_values(by='Datetime').reset_index(drop=True)
+            weekly = pd.concat([forecast, observed]).sort_values(
+                by='Datetime').reset_index(drop=True)
             weekly.loc[weekly['Location'] == 'San_Juan', 'Location'] = 'Observed'
             weekly.loc[weekly['Location'] == 'Ceiba', 'Location'] = 'Forecast'
 
-            #Ensure consistent sample length
+            # Ensure consistent sample length
             weekly = weekly.iloc[0:17]
-                        
+
             bad_mask = ~weekly['Neural Network'].map(_is_ok)
             if int(bad_mask.sum()) > 0:
                 print(weekly)
-                raise TypeError('Invalid nn values')         
-            
+                raise TypeError('Invalid nn values')
+
             samples.append(weekly)
             t0_list.append(t0)
 
     forecast_utils.save_samples_to_hdf5(
         samples, t0_list, samples_path)
+    return
 
 
 def create_nn_predictions(sample, model, scaler, data_shape):

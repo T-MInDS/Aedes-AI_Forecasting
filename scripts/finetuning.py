@@ -147,12 +147,12 @@ def main():
 
     fpaths_cfg = "../fpaths_config.json"
     # Expected to return (..., model_files_path, raw_mols_path)
-    _, _, _, model_files_path, raw_mols_path = gen_utils.load_paths(fpaths_cfg)
+    weather_path, trap_catch_path, nn_preds_path, model_files_path, raw_mols_path = gen_utils.load_paths(fpaths_cfg)
     model_files_path = os.path.expanduser(model_files_path)
     raw_mols_path = os.path.expanduser(raw_mols_path)
 
     # Where to drop plots/csv
-    training_output_path = gen_utils.load_output_paths(fpaths_cfg)
+    training_output_path, _ = gen_utils.load_output_paths(fpaths_cfg)
     training_output_path = os.path.expanduser(training_output_path)
     os.makedirs(training_output_path, exist_ok=True)
 
