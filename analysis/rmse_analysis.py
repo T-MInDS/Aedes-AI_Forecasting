@@ -19,35 +19,47 @@ from sklearn.metrics import mean_squared_error as mse
 
 # autopep8: on
 
-#---------------Error calculation functions
+# ---------------Error calculation functions
 def point_prediction_error(predictions, Ref):
     results = []
     rmse = np.sqrt(mse(predictions, Ref))
     results.append(rmse)
+    results.append(np.average(Ref))
 
     for i in range(len(Ref)):
         abs_err = np.abs(predictions.iloc[i] - Ref.iloc[i])
         results.append(abs_err)
-    
+
     return results
 
-#---------------Saving results functions
+# ---------------Saving results functions
+
+
 def add_result_line(scores, prefix, result_fil):
     with open(result_fil, "a", newline="") as f:
         writer = csv.writer(f, delimiter="\t")
         writer.writerow(prefix + scores)
     return
 
+
 def prepare_result_fil(dist, opath):
     result_fil = f'{opath}/{dist}_rmses.csv'
-    header = ['dist','t_0','RMSE','wk1_abs_err','wk2_abs_err','wk3_abs_err','wk4_abs_err']
+    header = [
+        'dist',
+        't_0',
+        'RMSE',
+        'Avg_trap',
+        'wk1_abs_err',
+        'wk2_abs_err',
+        'wk3_abs_err',
+        'wk4_abs_err']
     with open(result_fil, 'w', newline="") as f:
         csv.writer(f, delimiter="\t").writerow(header)
 
     return result_fil
 
 
-#---------------Processing samples function
+# ---------------Processing samples function
 def process_samples(samples, t0_list, output_path, dist):
     result_fil = prepare_result_fil(dist, output_path)
 
@@ -57,7 +69,7 @@ def process_samples(samples, t0_list, output_path, dist):
         forecast = sample[sample.Location == 'Forecast']
         scores = point_prediction_error(forecast['Point_predictions'], forecast['Ref'])
         add_result_line(scores, prefix, result_fil)
-    print(f'{dist} point prediction scores saved in {result_fil}')       
+    print(f'{dist} point prediction scores saved in {result_fil}')
     return
 
 
@@ -65,21 +77,21 @@ def main():
     fpaths_config = '../fpaths_config.json'
     _, _, nn_preds_path, _, _ = gen_utils.load_input_paths(
         fpaths_config)
-    
+
     _, output_path = gen_utils.load_output_paths(fpaths_config)
 
-    #Poisson
+    # Poisson
     if True:
         poisson_forecast_fil = f'{nn_preds_path}/poisson_forecasts.h5'
         poissons, t0_list = forecast_utils.load_samples_hdf5(poisson_forecast_fil)
         process_samples(poissons, t0_list, output_path, 'poisson')
 
-    #Neg Bin
+    # Neg Bin
     if True:
         negbin_forecast_fil = f'{nn_preds_path}/negbin_forecasts.h5'
         negbins, t0_list = forecast_utils.load_samples_hdf5(negbin_forecast_fil)
         process_samples(negbins, t0_list, output_path, 'negbin')
-    
+
 
 if __name__ == "__main__":
     main()
