@@ -61,7 +61,7 @@ def create_legend(fig, bottom_margin, bbox_to_anchor):
     true_handle = Line2D([], [], color='tab:green', linestyle='--', linewidth=2)
 
     handles = [trap_handle, prob_handle, true_handle]
-    labels  = ['Trap samples', 'Probabilistic Forecast', 'True prediction\ninterval bounds']
+    labels  = ['Trap samples', 'Probabilistic forecast', 'True prediction\ninterval bounds']
 
     leg = fig.legend(
         handles, labels,
@@ -117,9 +117,18 @@ def format_forecast_single_plot(ax, sample, dist):
             label.set_visible(False)
 
     #Add RMSE to top corner
-    rmse = np.sqrt(mse(forecast.iloc[1:].Ref, forecast.iloc[1:].Point_predictions))
-    ax.text(0.97, 0.95, f'RMSE: {rmse:.2f}', transform=ax.transAxes, ha='right', va='top', fontsize='small')
-
+    rmse = np.sqrt(mse(forecast.iloc[1:].Ref, forecast.iloc[1:].Point_predictions)) / np.average(forecast.iloc[1:].Ref)
+    #ax.text(0.97, 0.95, fr'$\frac{{\mathrm{{RMSE}}}}{{\overline{{\mathrm{{trap}}}}}}$: {rmse:.2f}',
+    #        transform=ax.transAxes, ha='right', va='top', fontsize='small')
+    ax.text(
+        0.75, 0.95,
+        fr'Relative' '\n'
+        fr'$\mathrm{{RMSE}}$: {rmse:.2f}',
+        transform=ax.transAxes,
+        ha='left', va='top',
+        fontsize='small',
+        linespacing=1.2
+    )
     return ax
 
 
@@ -138,6 +147,7 @@ def format_single_bar_plot(ax, avgs, stds, labels = []):
               '#084594']  # navy
     ax.bar(labels, avgs, color=colors, width=0.8)
     ax.errorbar(labels, avgs, ls='none', yerr=stds, ecolor='k', elinewidth=0.8)
-    ax.set_ylabel('Average Forecast Error')
-    
+    ax.set_ylabel('Average Forecast\nError $(n=389)$', fontsize=10)
+    ax.tick_params(axis='x', labelsize=10)
+
     return

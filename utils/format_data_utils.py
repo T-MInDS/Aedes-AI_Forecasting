@@ -9,14 +9,11 @@ import datetime
 import matplotlib.pyplot as plt
 import sys
 sys.path.append('../')
+import utils.gen_utils as gen_utils
 
 # Opening config file
-f = open('../fpaths_config.json')
-paths = json.load(f)
-
-weather_path = paths["weather_data"]
-nn_preds_path = paths["nn_abundance_predictions"]
-raw_mols_path = paths["raw_mols"]
+paths = '../fpaths_config.json'
+weather_path, trap_catch_path, nn_preds_path, model_files_path, raw_mols_path = gen_utils.load_input_paths(paths)
 
 
 def format_finetuning_samples(data, scaler):
@@ -49,9 +46,27 @@ def format_finetuning_samples(data, scaler):
 def save_weather_mols():
     san_juan = pd.read_pickle('{}/San_Juan_daily.pd'.format(weather_path))
     san_juan.to_csv('{}/San_Juan_MoLS.csv'.format(raw_mols_path), index=False)
+    for_mols_sj = san_juan.copy()
+    for_mols_sj['Max_T (c)'] = for_mols_sj.Avg_Temp
+    for_mols_sj['Min_T (c)'] = for_mols_sj.Avg_Temp
+    for_mols_sj.rename(columns={'Avg_Temp': 'Avg_T (c)', 'Humidity': 'Humidity (%)',
+                                'Precip': 'Rain_cm'}, inplace=True)
+    for_mols_sj['Rain_mm'] = 10*for_mols_sj.Rain_cm
+    for_mols_sj = for_mols_sj[['Year', 'Month', 'Day', 'Max_T (c)', 'Min_T (c)',
+                               'Rain_mm', 'Avg_T (c)', 'Rain_cm', 'Humidity (%)']]
+    for_mols_sj.to_csv(f'{weather_path}/sj_for_mols.csv', index=False)
 
     ceiba = pd.read_pickle('{}/Ceiba_daily.pd'.format(weather_path))
     ceiba.to_csv('{}/Ceiba_MoLS.csv'.format(raw_mols_path), index=False)
+    for_mols_ceiba = ceiba.copy()
+    for_mols_ceiba['Max_T (c)'] = for_mols_ceiba.Avg_Temp
+    for_mols_ceiba['Min_T (c)'] = for_mols_ceiba.Avg_Temp
+    for_mols_ceiba.rename(columns={'Avg_Temp': 'Avg_T (c)', 'Humidity': 'Humidity (%)',
+                                'Precip': 'Rain_cm'}, inplace=True)
+    for_mols_ceiba['Rain_mm'] = 10*for_mols_ceiba.Rain_cm
+    for_mols_ceiba = for_mols_ceiba[['Year', 'Month', 'Day', 'Max_T (c)', 'Min_T (c)',
+                               'Rain_mm', 'Avg_T (c)', 'Rain_cm', 'Humidity (%)']]
+    for_mols_ceiba.to_csv(f'{weather_path}/ceiba_for_mols.csv', index=False)
 
     # west_sj = pd.read_pickle('{}/West_SJ_daily.pd'.format(weather_path))
     # west_sj.to_csv('{}/West_SJ_MoLS.csv'.format(raw_mols_path), index=False)
