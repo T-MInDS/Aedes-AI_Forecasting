@@ -41,7 +41,8 @@ def plot_mols(observed, output_path):
     # CONFIRM AT HOME
     fig, axs = plt.subplots(figsize=(8, 3))
     axs.plot(observed.Datetime, observed['Ref'], color='tab:blue', alpha=0.8)
-    axs.set_ylabel('MoLS Unscaled Abundance')
+    axs.set_ylabel('Unscaled Abundance')
+    axs.set_title('MoLS Unscaled Abundance Curve for San Juan, Puerto Rico')
     fig.tight_layout()
     fig.savefig(f'{output_path}/observed_mols.png', dpi=300, bbox_inches='tight')
     return

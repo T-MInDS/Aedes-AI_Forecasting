@@ -18,42 +18,39 @@ import utils.gen_utils as gen_utils
 
 # autopep8: on
 
-# ---------------Combined scatterplot functions
-
-
-def single_scatter(alpha_grouped, ax, cmap):
-    for alpha in alpha_grouped.index:
-        color = cmap(1 - alpha)
-        vals = 100 * alpha_grouped[alpha_grouped.index == alpha].values[0]
-
-        good_idxs = np.where(vals >= 100 * alpha)[0]
-        bad_idxs = np.where(vals < 100 * alpha)[0]
-
-        wks = np.arange(1, len(vals) + 1)
-        ax.axhline(y=alpha * 100, xmin=0, xmax=len(vals), color=color, alpha=0.3)
-        marker_size_good = 10
-        marker_size_bad = 30
-        ax.scatter(wks[good_idxs], vals[good_idxs], color=color, alpha=0.8, s=marker_size_good)
-        ax.scatter(wks[bad_idxs], vals[bad_idxs], color=color, alpha=1, s=marker_size_bad)
-
-    yticks = 100 * alpha_grouped.index.values
-    yticks[-1] = 99
-    ax.set_yticks(yticks)
-    ax.set_xticks(wks, ['wk 1', 'wk 2', 'wk 3', 'wk 4'])
-    ax.set_ylabel('Coverages', fontsize=10)
-    ax.set_xlabel('Forecast Week', fontsize=10)
-    for k, label in enumerate(ax.yaxis.get_ticklabels()):
-        if k % 2 != 0:
-            label.set_visible(False)
-    return
-
-
 # ---------------Weekly plot functions
 def single_small(ax_small, alphas, coverages_for_week, cmap):
-    scatter_colors = [cmap(1 - alpha) for alpha in alphas]
-    sizes = [10 if c >= a * 100 else 40 for a, c in zip(alphas, coverages_for_week)]
+    scatter_colors = np.array([cmap(1 - alpha) for alpha in alphas])
+    alphas_arr = np.array(alphas)
 
-    ax_small.scatter(alphas, coverages_for_week, c=scatter_colors, s=sizes)
+    nominal = np.array(alphas)*100
+    coverages = np.array(coverages_for_week)
+
+    good_mask = coverages >= nominal
+    broken_mask = ~good_mask
+
+    if np.any(good_mask):
+        ax_small.scatter(
+            alphas_arr[good_mask],
+            coverages[good_mask],
+            c=scatter_colors[good_mask, :],
+            s=15,                   # moderate size
+            marker='o',
+            alpha=0.9,
+            zorder=3,
+        )
+
+    if np.any(broken_mask):
+        ax_small.scatter(
+            alphas_arr[broken_mask],
+            coverages[broken_mask],
+            facecolors='none',      # hollow marker for clear visual contrast
+            edgecolors=scatter_colors[broken_mask, :],
+            s=20,                   # slightly larger but not too large
+            marker='v',
+            linewidth=1.2,
+            zorder=4,
+        )
     ax_small.axline((0, 0), slope=100, linestyle='--', color='gray', alpha=0.8)
 
     ax_small.set_xlim([-0.05, 1.05])
@@ -68,11 +65,16 @@ def single_small(ax_small, alphas, coverages_for_week, cmap):
 def small_plots(fig, small_gs, alpha_grouped, cmap):
     int_vals = [str(i) for i in range(0, 101, 10)]
     int_vals[-1] = 99
+
+    axs_block = []
+    alphas = sorted(alpha_grouped.index.values)
+
+
     for idx in np.arange(alpha_grouped.shape[-1]):
         i, j = divmod(idx, 2)
         ax_small = fig.add_subplot(small_gs[i, j])
-        alphas = sorted(alpha_grouped.index.values)
         coverages_for_week = [100 * alpha_grouped.loc[alpha][idx] for alpha in alphas]
+        print(i, j, coverages_for_week)
 
         single_small(ax_small, alphas, coverages_for_week, cmap)
 
@@ -95,8 +97,9 @@ def small_plots(fig, small_gs, alpha_grouped, cmap):
             for k, label in enumerate(ax_small.yaxis.get_ticklabels()):
                 if k % 2 != 0:
                     label.set_visible(False)
+        axs_block.append(ax_small)
 
-    return
+    return axs_block
 
 
 def colorbar(cb_ax):
@@ -115,7 +118,7 @@ def colorbar(cb_ax):
                                    ticks=tick_locs, boundaries=bounds,
                                    orientation='horizontal')
     cb.ax.set_xticklabels(tick_labels)
-    cb.ax.set_xlabel(r'$100\cdot(1-\alpha)$', fontsize=12)
+    cb.ax.set_xlabel(r'$100\cdot(1-\alpha)$', fontsize=10)
 
 # ---------------Main plot functions
 
@@ -123,32 +126,63 @@ def colorbar(cb_ax):
 def coverage_plot(poissons, negbins, output_path):
     cmap = plt.get_cmap('viridis')
 
-    fig = plt.figure(figsize=(9, 9))
-    height_ratios = [1, 0.2, 1, 0.05, 0.08]
-    outer_gs = GridSpec(len(height_ratios), 1, height_ratios=height_ratios, figure=fig)
 
+    fig = plt.figure(figsize=(9, 4))
+    height_ratios = [1, 0.05, 0.08]
+    outer_gs = GridSpec(
+        nrows=len(height_ratios),
+        ncols=1,
+        height_ratios=height_ratios,
+        figure=fig
+    )
     cov_cols = ['alpha', 'wk1', 'wk2', 'wk3', 'wk4']
 
     dist_dict = {'Poisson': poissons, 'Negative Binomial': negbins}
-    row_indices = [0, 2]
-    for row_idx, (dist_name, coverages) in zip(row_indices, dist_dict.items()):
-        row_gs = GridSpecFromSubplotSpec(
-            1, 2, width_ratios=[
-                1.5, 3], subplot_spec=outer_gs[row_idx], wspace=0.25)
-
-        ax = fig.add_subplot(row_gs[0])
-
+    
+    dist_gs = GridSpecFromSubplotSpec(
+        1, 2,
+        subplot_spec=outer_gs[0],
+        wspace=0.25
+    )
+    for i, (dist_name, coverages) in enumerate(dist_dict.items()):
         alpha_grouped = coverages[cov_cols].groupby('alpha').mean()
-        single_scatter(alpha_grouped, ax, cmap)
-        ax.annotate('{}'.format(dist_name), xy=(0, 0.5), xycoords='axes fraction',
-                    xytext=(-55, 0), textcoords='offset points',
-                    ha='right', va='center', fontsize=12, rotation=90,
-                    bbox=dict(boxstyle="round,pad=0.3", fc='white', ec='black', lw=0.8))
 
         # Add 2x2 subplot grid to the right of the main plots
-        small_gs = GridSpecFromSubplotSpec(2, 2, subplot_spec=row_gs[1], wspace=0.1, hspace=0.3)
-        small_plots(fig, small_gs, alpha_grouped, cmap)
+                # 2x2 sub-block for weeks
+        small_gs = GridSpecFromSubplotSpec(
+            2, 2,
+            subplot_spec=dist_gs[0, i],
+            wspace=0.1,
+            hspace=0.3
+        )
+        print(dist_name)
+        axs_block = small_plots(fig, small_gs, alpha_grouped, cmap)    
+        
+        # Add a block label ("Poisson", etc.) above Week 1 panel
+        # axs_block[0] = Week 1 (row 0, col 0)
+        # axs_block[1] = Week 2 (row 0, col 1)
+        ax_left  = axs_block[0]
+        ax_right = axs_block[1]
 
+        pos_left = ax_left.get_position(fig)
+        pos_right = ax_right.get_position(fig)
+
+        # horizontal center between left edge of left subplot and right edge of right subplot
+        x_center = 0.5 * (pos_left.x0 + pos_right.x1)
+
+        # vertical position just above the top row
+        y_top = max(pos_left.y1, pos_right.y1)
+        y_text = y_top + 0.05  # bump up a little
+
+        fig.text(
+            x_center,
+            y_text,
+            dist_name,
+            ha='center',
+            va='bottom',
+            fontsize=10
+        )
+        
     cb_ax = fig.add_subplot(outer_gs[-1])
     colorbar(cb_ax)
 

@@ -73,9 +73,7 @@ def tabular_rmses(trap_catch_path, output_path):
 def err_plot(output_path):
     poisson = pd.read_csv(f'{output_path}/poisson_rmses.csv', sep='\t')
     negbin = pd.read_csv(f'{output_path}/negbin_rmses.csv', sep='\t')
-    
-    score_cols = ['RMSE', 'wk1_abs_err', 'wk2_abs_err',
-                  'wk3_abs_err', 'wk4_abs_err']
+
     labels = [
         r'RMSE (wks. 1–4)',
         r'$|$Error$|$ (wk 1)',
@@ -84,25 +82,28 @@ def err_plot(output_path):
         r'$|$Error$|$ (wk 4)'
     ]
 
+    score_cols = ['RMSE', 'wk1_abs_err', 'wk2_abs_err',
+                  'wk3_abs_err', 'wk4_abs_err']
+
     fig, axs = plt.subplots(2, figsize=(8,4.5), sharex=True, sharey=True)
 
-    dists = {'Poisson': poisson[score_cols], 'Negative Binomial': negbin[score_cols]}
+    dists = {'Poisson': poisson, 'Negative Binomial': negbin}
     for ax, (dist, scores) in zip(axs, dists.items()):
-        avgs = scores.mean()
-        stds = scores.std()
+        avgs = scores[score_cols].mean()
+        stds = scores[score_cols].std()
         plt_utils.format_single_bar_plot(ax, avgs, stds, labels)
         #ax.annotate(f'{dist}', xy=(0, 0.5), xycoords='axes fraction', 
         #            xytext=(-50, 0), textcoords='offset points',
         #            ha='right', va='center', fontsize='large', rotation=90, 
         #            bbox=dict(boxstyle="round,pad=0.3", fc='white', ec='black', lw=0.8))
-        ax.set_title(dist)#, fontsize='medium')
+        ax.set_title(f'{dist} (Avg. Trap = {np.average(scores.Avg_trap):.2f})', fontsize=12)
 
     
     axs[1].set_xticklabels(labels, rotation=0)
     #axs[0].set_title('Forecast Point Prediction Scores', fontsize='medium')
 
     fig.tight_layout()
-    fig.savefig(f'{output_path}/error_bar_plot.png', dpi=300, bbox_inches='tight')        
+    fig.savefig(f'{output_path}/point_prediction_errors.png', dpi=300, bbox_inches='tight')        
     return
 
 

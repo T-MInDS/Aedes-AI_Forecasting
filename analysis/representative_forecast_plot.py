@@ -22,18 +22,16 @@ import utils.plotting_utils as plt_utils
 
 # ---------------Processing samples and find indices functions
 def find_skill_t0s(rmses):
-    print(rmses.columns)
-    asdf
     # Find Rel RMSE instead of raw to account for difference in magnitude
-    rel_rmses = rmses.RMSE / 2
+    rel_rmses = rmses.RMSE / rmses.Avg_trap
 
     # Reminder p25 indicates higher skill RMSE and p75 indicates lower skill
-    p25 = np.percentile(rmses.RMSE, 25)
-    p75 = np.percentile(rmses.RMSE, 75)
+    p25 = np.percentile(rel_rmses, 25)
+    p75 = np.percentile(rel_rmses, 75)
 
     # Find index of the closest values to those percentiles
-    i25 = np.argmin(np.abs(rmses.RMSE - p25))
-    i75 = np.argmin(np.abs(rmses.RMSE - p75))
+    i25 = np.argmin(np.abs(rel_rmses - p25))
+    i75 = np.argmin(np.abs(rel_rmses - p75))
 
     return i25, i75
 
@@ -163,7 +161,7 @@ def forecast_examples(nn_preds_path, output_path):
             bottom_margin=bottom_margin,
             bbox_to_anchor=bbox_to_anchor)
         fig.tight_layout(rect=(0, bottom_margin + 0.01, 1, 1))
-        fig.savefig(f'{output_path}/forecast_examples_{subset}.png', dpi=300)
+        fig.savefig(f'{output_path}/forecast_subset_{subset}.png', dpi=300)
 
     return
 

@@ -1,0 +1,128 @@
+
+[2025-11-01 22:04:40] START: coverage_analysis.py
+--- CMD ---
+/home/ackinney1/miniforge3/envs/forecasting/bin/python coverage_analysis.py
+/home/ackinney1/miniforge3/envs/forecasting/lib/python3.12/site-packages/numpy/_core/getlimits.py:552: UserWarning: Signature b'\x00\xd0\xcc\xcc\xcc\xcc\xcc\xcc\xfb\xbf\x00\x00\x00\x00\x00\x00' for <class 'numpy.longdouble'> does not match any known type: falling back to type probe function.
+This warnings indicates broken support for the dtype!
+  machar = _get_machar(dtype)
+Loaded 389 samples from ../data/nn_abundance_predictions/poisson_forecasts.h5
+poisson coverages saved in ../output/poisson_coverages.csv
+Loaded 389 samples from ../data/nn_abundance_predictions/negbin_forecasts.h5
+negbin coverages saved in ../output/negbin_coverages.csv
+
+[2025-11-01 22:05:12] SUCCESS: coverage_analysis.py
+Duration: 32.18s
+------------------------------------------------------------
+
+
+[2025-11-01 22:05:12] START: rmse_analysis.py
+--- CMD ---
+/home/ackinney1/miniforge3/envs/forecasting/bin/python rmse_analysis.py
+/home/ackinney1/miniforge3/envs/forecasting/lib/python3.12/site-packages/numpy/_core/getlimits.py:552: UserWarning: Signature b'\x00\xd0\xcc\xcc\xcc\xcc\xcc\xcc\xfb\xbf\x00\x00\x00\x00\x00\x00' for <class 'numpy.longdouble'> does not match any known type: falling back to type probe function.
+This warnings indicates broken support for the dtype!
+  machar = _get_machar(dtype)
+Loaded 389 samples from ../data/nn_abundance_predictions/poisson_forecasts.h5
+poisson point prediction scores saved in ../output/poisson_rmses.csv
+Loaded 389 samples from ../data/nn_abundance_predictions/negbin_forecasts.h5
+negbin point prediction scores saved in ../output/negbin_rmses.csv
+
+[2025-11-01 22:05:22] SUCCESS: rmse_analysis.py
+Duration: 9.93s
+------------------------------------------------------------
+
+
+[2025-11-01 22:05:22] START: representative_forecast_plot.py
+--- CMD ---
+/home/ackinney1/miniforge3/envs/forecasting/bin/python representative_forecast_plot.py
+/home/ackinney1/miniforge3/envs/forecasting/lib/python3.12/site-packages/numpy/_core/getlimits.py:552: UserWarning: Signature b'\x00\xd0\xcc\xcc\xcc\xcc\xcc\xcc\xfb\xbf\x00\x00\x00\x00\x00\x00' for <class 'numpy.longdouble'> does not match any known type: falling back to type probe function.
+This warnings indicates broken support for the dtype!
+  machar = _get_machar(dtype)
+Loaded 389 samples from ../data/nn_abundance_predictions/poisson_forecasts.h5
+Loaded 389 samples from ../data/nn_abundance_predictions/negbin_forecasts.h5
+Loaded 389 samples from ../data/nn_abundance_predictions/poisson_forecasts.h5
+Loaded 389 samples from ../data/nn_abundance_predictions/negbin_forecasts.h5
+
+[2025-11-01 22:05:46] SUCCESS: representative_forecast_plot.py
+Duration: 23.60s
+------------------------------------------------------------
+
+
+[2025-11-01 22:05:46] START: coverage_plots.py
+--- CMD ---
+/home/ackinney1/miniforge3/envs/forecasting/bin/python coverage_plots.py
+/home/ackinney1/miniforge3/envs/forecasting/lib/python3.12/site-packages/numpy/_core/getlimits.py:552: UserWarning: Signature b'\x00\xd0\xcc\xcc\xcc\xcc\xcc\xcc\xfb\xbf\x00\x00\x00\x00\x00\x00' for <class 'numpy.longdouble'> does not match any known type: falling back to type probe function.
+This warnings indicates broken support for the dtype!
+  machar = _get_machar(dtype)
+/home/ackinney1/Projects/dissertation_forecasting/analysis/coverage_plots.py:76: FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
+  coverages_for_week = [100 * alpha_grouped.loc[alpha][idx] for alpha in alphas]
+/home/ackinney1/Projects/dissertation_forecasting/analysis/coverage_plots.py:76: FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
+  coverages_for_week = [100 * alpha_grouped.loc[alpha][idx] for alpha in alphas]
+/home/ackinney1/Projects/dissertation_forecasting/analysis/coverage_plots.py:76: FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
+  coverages_for_week = [100 * alpha_grouped.loc[alpha][idx] for alpha in alphas]
+/home/ackinney1/Projects/dissertation_forecasting/analysis/coverage_plots.py:76: FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
+  coverages_for_week = [100 * alpha_grouped.loc[alpha][idx] for alpha in alphas]
+/home/ackinney1/Projects/dissertation_forecasting/analysis/coverage_plots.py:76: FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
+  coverages_for_week = [100 * alpha_grouped.loc[alpha][idx] for alpha in alphas]
+/home/ackinney1/Projects/dissertation_forecasting/analysis/coverage_plots.py:76: FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
+  coverages_for_week = [100 * alpha_grouped.loc[alpha][idx] for alpha in alphas]
+/home/ackinney1/Projects/dissertation_forecasting/analysis/coverage_plots.py:76: FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
+  coverages_for_week = [100 * alpha_grouped.loc[alpha][idx] for alpha in alphas]
+/home/ackinney1/Projects/dissertation_forecasting/analysis/coverage_plots.py:76: FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
+  coverages_for_week = [100 * alpha_grouped.loc[alpha][idx] for alpha in alphas]
+
+[2025-11-01 22:05:50] SUCCESS: coverage_plots.py
+Duration: 4.46s
+------------------------------------------------------------
+
+
+[2025-11-01 22:05:50] START: rmse_plots.py
+--- CMD ---
+/home/ackinney1/miniforge3/envs/forecasting/bin/python rmse_plots.py
+/home/ackinney1/miniforge3/envs/forecasting/lib/python3.12/site-packages/numpy/_core/getlimits.py:552: UserWarning: Signature b'\x00\xd0\xcc\xcc\xcc\xcc\xcc\xcc\xfb\xbf\x00\x00\x00\x00\x00\x00' for <class 'numpy.longdouble'> does not match any known type: falling back to type probe function.
+This warnings indicates broken support for the dtype!
+  machar = _get_machar(dtype)
+/home/ackinney1/Projects/dissertation_forecasting/analysis/rmse_plots.py:102: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
+  axs[1].set_xticklabels(labels, rotation=0)
+Distribution: poisson
+Avg. trap catch: 10.4232
+RMSE mu: 1.6070; RMSE sig: 1.1314
+Approx err mu: 0.1542; Approx err sig: 0.1085
+--------------------------------------------------
+
+Distribution: negbin
+Avg. trap catch: 8.5182
+RMSE mu: 1.4041; RMSE sig: 0.9243
+Approx err mu: 0.1648; Approx err sig: 0.1085
+--------------------------------------------------
+
+
+Summary saved to: ../output/rmse_summary.txt
+
+[2025-11-01 22:05:54] SUCCESS: rmse_plots.py
+Duration: 4.17s
+------------------------------------------------------------
+
+
+[2025-11-01 22:05:54] START: simulated_trap_plots.py
+--- CMD ---
+/home/ackinney1/miniforge3/envs/forecasting/bin/python simulated_trap_plots.py
+/home/ackinney1/miniforge3/envs/forecasting/lib/python3.12/site-packages/numpy/_core/getlimits.py:552: UserWarning: Signature b'\x00\xd0\xcc\xcc\xcc\xcc\xcc\xcc\xfb\xbf\x00\x00\x00\x00\x00\x00' for <class 'numpy.longdouble'> does not match any known type: falling back to type probe function.
+This warnings indicates broken support for the dtype!
+  machar = _get_machar(dtype)
+
+[2025-11-01 22:05:59] SUCCESS: simulated_trap_plots.py
+Duration: 5.11s
+------------------------------------------------------------
+
+
+[2025-11-01 22:05:59] START: weather_plots.py
+--- CMD ---
+/home/ackinney1/miniforge3/envs/forecasting/bin/python weather_plots.py
+/home/ackinney1/miniforge3/envs/forecasting/lib/python3.12/site-packages/numpy/_core/getlimits.py:552: UserWarning: Signature b'\x00\xd0\xcc\xcc\xcc\xcc\xcc\xcc\xfb\xbf\x00\x00\x00\x00\x00\x00' for <class 'numpy.longdouble'> does not match any known type: falling back to type probe function.
+This warnings indicates broken support for the dtype!
+  machar = _get_machar(dtype)
+
+[2025-11-01 22:06:04] SUCCESS: weather_plots.py
+Duration: 4.45s
+------------------------------------------------------------
+
