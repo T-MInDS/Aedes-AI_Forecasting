@@ -9,6 +9,7 @@
   },
   "output": {
     "output_fil_path": "../output",
+    "training_output": "../output/training",
     "coverages": "../output/coverages.csv"
   }
 }
