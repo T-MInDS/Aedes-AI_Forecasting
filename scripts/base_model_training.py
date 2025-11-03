@@ -327,7 +327,8 @@ def main():
 
     args = parser.parse_args()
 
-    _, _, _, model_files_path, _ = gen_utils.load_paths(args.paths)
+    paths = '../fpaths_config.json'
+    _, _, _, model_files_path, _ = gen_utils.load_input_paths(paths)    
     cfg_path = os.path.join(os.path.expanduser(model_files_path), args.config_name)
 
     did_any = False
