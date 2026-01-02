@@ -4,7 +4,7 @@ Real-time, probabilistic forecasting of *Aedes aegypti* gravid female trap count
 
 This repository contains code to (i) fine-tune a pre-trained Aedes-AI model on local weather, (ii) calibrate abundance estimates to observed trap counts near the forecast origin, and (iii) generate probabilistic 4 week-ahead forecasts under Poisson and Negative Binomial count assumptions.
 
-> Related work: the original Aedes-AI model suite is hosted separately. See the Aedes-AI repository for background and model family details at 
+> Related work: the original Aedes-AI model suite is hosted separately. See the Aedes-AI repository for background and model family details at https://github.com/T-MInDS/Aedes-AI
 
 ---
 
